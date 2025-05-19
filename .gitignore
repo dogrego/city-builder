@@ -1,0 +1,22 @@
+# Visual Studio build artifacts
+BudaBuilder/BudaBuilder/
+BudaBuilder/.vs/
+BudaBuilder/x64/
+BudaBuilder/*/x64/
+
+# Visual Studio user-specific files
+*.user
+*.suo
+*.aps
+*.pch
+*.vspscc
+*.vssscc
+
+# Compiled files
+*.obj
+*.exe
+*.ilk
+*.pdb
+*.dll
+*.lib
+*.exp
