@@ -544,10 +544,10 @@ void CMyApp::UpdateDayNightCycle(float deltaTime)
 
 	// Sun color - completely smooth gradient using key points
 	const glm::vec3 nightColor(0.0f, 0.0f, 0.0f);
-	const glm::vec3 sunriseColor1(1.0f, 0.2f, 0.0f);   // Deep red
-	const glm::vec3 sunriseColor2(1.0f, 0.5f, 0.1f);   // Bright orange
-	const glm::vec3 daylightColor1(1.0f, 0.8f, 0.5f);  // Warm white
-	const glm::vec3 daylightColor2(1.0f, 1.0f, 1.0f);  // Pure white
+	const glm::vec3 sunLowColor(1.0f, 0.2f, 0.0f);   // Deep red
+	const glm::vec3 sunMidColor(1.0f, 0.5f, 0.1f);   // Bright orange
+	const glm::vec3 sunHighColor(1.0f, 0.8f, 0.5f);  // Warm white
+	const glm::vec3 sunZenithColor(1.0f, 1.0f, 1.0f);  // Pure white
 
 	// Smooth sun color transition using smoothstep interpolation
 	float sunColorBlend1 = glm::smoothstep(0.0f, 0.1f, sunHeight);
@@ -556,10 +556,10 @@ void CMyApp::UpdateDayNightCycle(float deltaTime)
 
 	m_sunColor = nightColor;
 	if (sunDir.y > -0.2f) {
-		m_sunColor = glm::mix(m_sunColor, sunriseColor1, sunColorBlend1);
-		m_sunColor = glm::mix(m_sunColor, sunriseColor2, sunColorBlend2);
-		m_sunColor = glm::mix(m_sunColor, daylightColor1, sunColorBlend3);
-		m_sunColor = glm::mix(m_sunColor, daylightColor2, glm::smoothstep(0.7f, 1.0f, sunHeight));
+		m_sunColor = glm::mix(m_sunColor, sunLowColor, sunColorBlend1);
+		m_sunColor = glm::mix(m_sunColor, sunMidColor, sunColorBlend2);
+		m_sunColor = glm::mix(m_sunColor, sunHighColor, sunColorBlend3);
+		m_sunColor = glm::mix(m_sunColor, sunZenithColor, glm::smoothstep(0.7f, 1.0f, sunHeight));
 	}
 
 	// Moon position (opposite the sun)
@@ -567,17 +567,27 @@ void CMyApp::UpdateDayNightCycle(float deltaTime)
 	glm::vec3 moonDir = glm::vec3(cosf(moonAngle), sinf(moonAngle), 0.0f);
 	m_moonLightPosition = glm::vec4(moonDir, 0.0f);
 
-	// Moon color - smooth gradient
+	// Calculate normalized moon height [-1, 1] -> [0, 1] where 0=horizon, 1=zenith
 	float moonHeight = (moonDir.y + 1.0f) * 0.5f;
-	float moonBlend1 = glm::smoothstep(0.0f, 0.25f, moonHeight);
-	float moonBlend2 = glm::smoothstep(0.25f, 0.5f, moonHeight);
-	float moonBlend3 = glm::smoothstep(0.5f, 0.75f, moonHeight);
 
-	m_moonColor = glm::vec3(0.2f, 0.2f, 0.5f); // Base night color
-	if (moonDir.y > -0.1f) {
-		m_moonColor = glm::mix(m_moonColor, glm::vec3(0.5f, 0.5f, 0.8f), moonBlend1);
-		m_moonColor = glm::mix(m_moonColor, glm::vec3(0.8f, 0.8f, 0.9f), moonBlend2);
-		m_moonColor = glm::mix(m_moonColor, glm::vec3(0.9f, 0.9f, 1.0f), moonBlend3);
+	// Moon color - completely smooth gradient using key points
+	const glm::vec3 dayColor(0.0f, 0.0f, 0.0f);
+	const glm::vec3 moonLowColor(0.3f, 0.3f, 0.8f);        // Rich blue
+	const glm::vec3 moonMidColor(0.5f, 0.5f, 0.95f);      // Bright blue
+	const glm::vec3 moonHighColor(0.8f, 0.8f, 1.0f);      // Pale blue
+	const glm::vec3 moonZenithColor(1.0f, 1.0f, 1.0f);    // Pure white
+
+	// Smooth moon color transition using smoothstep interpolation
+	float moonColorBlend1 = glm::smoothstep(0.0f, 0.2f, moonHeight);
+	float moonColorBlend2 = glm::smoothstep(0.2f, 0.5f, moonHeight);
+	float moonColorBlend3 = glm::smoothstep(0.5f, 0.8f, moonHeight);
+
+	m_moonColor = dayColor;
+	if (moonDir.y > -0.2f) {
+		m_moonColor = glm::mix(m_moonColor, moonLowColor, moonColorBlend1);
+		m_moonColor = glm::mix(m_moonColor, moonMidColor, moonColorBlend2);
+		m_moonColor = glm::mix(m_moonColor, moonHighColor, moonColorBlend3);
+		m_moonColor = glm::mix(m_moonColor, moonZenithColor, glm::smoothstep(0.7f, 1.0f, moonHeight));
 	}
 
 	// Sky colors - completely smooth transition
@@ -631,14 +641,11 @@ void CMyApp::UpdateDayNightCycle(float deltaTime)
 	float moonIntensity = (moonDir.y > -0.1f) ? pow(glm::clamp(moonDir.y, 0.0f, 1.0f), 1.5f) : 0.0f;
 
 	// Lighting parameters
-	m_La = m_sunColor * (0.1f + 0.1f * sunIntensity) +
-		m_moonColor * (0.02f + 0.03f * moonIntensity);
+	m_La = m_sunColor * (0.1f + 0.1f * sunIntensity);
 
-	m_Ld = m_sunColor * (0.3f + 0.5f * sunIntensity) +
-		m_moonColor * (0.1f + 0.1f * moonIntensity);
+	m_Ld = m_sunColor * (0.3f + 0.5f * sunIntensity);
 
-	m_Ls = m_sunColor * (0.5f + 0.5f * sunIntensity) +
-		m_moonColor * (0.2f + 0.1f * moonIntensity);
+	m_Ls = m_sunColor * (0.5f + 0.5f * sunIntensity);
 
 	// Moon-specific lighting parameters
 	m_moonLa = m_moonColor * (0.02f + 0.03f * moonIntensity);
