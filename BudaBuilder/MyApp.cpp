@@ -9,6 +9,7 @@
 	#include <string>
 	#include <array>
 	#include <algorithm>
+	#include <chrono>
 
 	CMyApp::CMyApp()
 	{
@@ -56,6 +57,292 @@
 			.ShaderStage(GL_VERTEX_SHADER, "Shaders/Vert_Skybox.vert")
 			.ShaderStage(GL_FRAGMENT_SHADER, "Shaders/Frag_Skybox.frag")
 			.Link();
+	}
+
+	void CMyApp::InitTerrainShaders() {
+		m_terrainProgram = glCreateProgram();
+		ProgramBuilder{ m_terrainProgram }
+			.ShaderStage(GL_VERTEX_SHADER, "Shaders/Vert_Terrain.vert")
+			.ShaderStage(GL_FRAGMENT_SHADER, "Shaders/Frag_Terrain.frag")
+			.Link();
+
+		m_ulTerrainWorld = glGetUniformLocation(m_terrainProgram, "world");
+		m_ulTerrainWorldIT = glGetUniformLocation(m_terrainProgram, "worldInvTransp");
+		m_ulTerrainViewProj = glGetUniformLocation(m_terrainProgram, "viewProj");
+		m_ulTerrainHeightScale = glGetUniformLocation(m_terrainProgram, "heightScale");
+		m_ulTerrainTexScale = glGetUniformLocation(m_terrainProgram, "texScale");
+	}
+
+	void CMyApp::InitTerrainTextures() {
+		// Load ground textures
+		std::string groundTexPaths[4] = {
+		"Assets/ground1.jpg",  // Grass/dirt
+		"Assets/ground2.jpg",  // Dry grass
+		"Assets/ground3.jpg",  // Mud
+		"Assets/ground4.jpg"   // Forest floor
+		};
+
+		for (int i = 0; i < 4; ++i) {
+			ImageRGBA groundImage = ImageFromFile(groundTexPaths[i]);
+			glCreateTextures(GL_TEXTURE_2D, 1, &m_groundTextures[i]);
+			glTextureStorage2D(m_groundTextures[i], NumberOfMIPLevels(groundImage), GL_RGBA8, groundImage.width, groundImage.height);
+			glTextureSubImage2D(m_groundTextures[i], 0, 0, 0, groundImage.width, groundImage.height, GL_RGBA, GL_UNSIGNED_BYTE, groundImage.data());
+			glGenerateTextureMipmap(m_groundTextures[i]);
+		}
+
+		// Load special textures
+		ImageRGBA rockImage = ImageFromFile("Assets/rock.jpg");
+		glCreateTextures(GL_TEXTURE_2D, 1, &m_rockTexture);
+		glTextureStorage2D(m_rockTexture, NumberOfMIPLevels(rockImage), GL_RGBA8, rockImage.width, rockImage.height);
+		glTextureSubImage2D(m_rockTexture, 0, 0, 0, rockImage.width, rockImage.height, GL_RGBA, GL_UNSIGNED_BYTE, rockImage.data());
+		glGenerateTextureMipmap(m_rockTexture);
+
+		ImageRGBA sandImage = ImageFromFile("Assets/sand.jpg");
+		glCreateTextures(GL_TEXTURE_2D, 1, &m_sandTexture);
+		glTextureStorage2D(m_sandTexture, NumberOfMIPLevels(sandImage), GL_RGBA8, sandImage.width, sandImage.height);
+		glTextureSubImage2D(m_sandTexture, 0, 0, 0, sandImage.width, sandImage.height, GL_RGBA, GL_UNSIGNED_BYTE, sandImage.data());
+		glGenerateTextureMipmap(m_sandTexture);
+
+		ImageRGBA snowImage = ImageFromFile("Assets/snow.jpg");
+		glCreateTextures(GL_TEXTURE_2D, 1, &m_snowTexture);
+		glTextureStorage2D(m_snowTexture, NumberOfMIPLevels(snowImage), GL_RGBA8, snowImage.width, snowImage.height);
+		glTextureSubImage2D(m_snowTexture, 0, 0, 0, snowImage.width, snowImage.height, GL_RGBA, GL_UNSIGNED_BYTE, snowImage.data());
+		glGenerateTextureMipmap(m_snowTexture);
+	}
+
+	//void CMyApp::GenerateHeightmap() {
+	//	const int width = 512;
+	//	const int height = 512;
+
+	//	std::vector<float> heightData(width * height);
+
+	//	PerlinNoise pn(12345);
+	//	for (int y = 0; y < height; ++y) {
+	//		for (int x = 0; x < width; ++x) {
+	//			double nx = x / (double)width - 0.5;
+	//			double ny = y / (double)height - 0.5;
+
+	//			// Generate multi-octave Perlin noise
+	//			double value = pn.octaveNoise(nx * 5, ny * 5, 6, 0.5);
+
+	//			// Normalize to 0-1 range
+	//			value = (value + 1.0) * 0.5;
+	//			heightData[y * width + x] = static_cast<float>(value);
+	//		}
+	//	}
+
+	//	glCreateTextures(GL_TEXTURE_2D, 1, &m_heightmapTexture);
+	//	glTextureStorage2D(m_heightmapTexture, 1, GL_R32F, width, height);
+	//	glTextureSubImage2D(m_heightmapTexture, 0, 0, 0, width, height, GL_RED, GL_FLOAT, heightData.data());
+	//	glTextureParameteri(m_heightmapTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	//	glTextureParameteri(m_heightmapTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	//	glTextureParameteri(m_heightmapTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	//	glTextureParameteri(m_heightmapTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	//}
+
+	void CMyApp::GenerateHeightmap() {
+		const int width = 1000;
+		const int height = 1000;
+
+		std::vector<float> heightData(width * height);
+
+		unsigned seed = static_cast<unsigned>(std::chrono::system_clock::now().time_since_epoch().count());
+
+		PerlinNoise pn(seed);
+		for (int y = 0; y < height; ++y) {
+			for (int x = 0; x < width; ++x) {
+				double nx = x / (double)width - 0.5;
+				double ny = y / (double)height - 0.5;
+
+				// Calculate distance from center (0-1)
+				float distFromCenter = glm::length(glm::vec2(nx, ny)) * 2.0f; // *2 to normalize to 0-1
+
+				// Generate multi-octave Perlin noise
+				double value = pn.octaveNoise(nx * 5, ny * 5, 6, 0.5);
+
+				// Normalize to 0-1 range
+				value = (value + 1.0) * 0.5;
+
+				// Apply island mask - reduce height near edges
+				float islandMask = 1.0f - smoothstep(0.6f, 1.0f, distFromCenter);
+				value *= islandMask;
+
+				// Add some extra noise to the edges to make them more interesting
+				if (distFromCenter > 0.7f) {
+					double edgeNoise = pn.octaveNoise(nx * 10, ny * 10, 2, 0.5) * 0.2;
+					value += edgeNoise * (1.0 - islandMask);
+				}
+
+				heightData[y * width + x] = static_cast<float>(value);
+			}
+		}
+
+		// Create texture (same as before)
+		glCreateTextures(GL_TEXTURE_2D, 1, &m_heightmapTexture);
+		glTextureStorage2D(m_heightmapTexture, 1, GL_R32F, width, height);
+		glTextureSubImage2D(m_heightmapTexture, 0, 0, 0, width, height, GL_RED, GL_FLOAT, heightData.data());
+		glTextureParameteri(m_heightmapTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTextureParameteri(m_heightmapTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTextureParameteri(m_heightmapTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTextureParameteri(m_heightmapTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	}
+
+	void CMyApp::GenerateSplatmap() {
+		const int width = 1000;
+		const int height = 1000;
+
+		std::vector<glm::vec4> splatData(width * height);
+
+		unsigned seed = static_cast<unsigned>(std::chrono::system_clock::now().time_since_epoch().count());
+
+		PerlinNoise pn(seed);
+		for (int y = 0; y < height; ++y) {
+			for (int x = 0; x < width; ++x) {
+				double nx = x / (double)width;
+				double ny = y / (double)height;
+
+				// Generate multiple noise layers
+				double noise1 = pn.octaveNoise(nx * 5, ny * 5, 3, 0.5);
+				double noise2 = pn.octaveNoise(nx * 10, ny * 10, 4, 0.5);
+				double noise3 = pn.octaveNoise(nx * 20, ny * 20, 2, 0.5);
+
+				// Create interesting patterns
+				glm::vec4 weights(0.0f);
+				weights.r = (float)((noise1 + 1) * 0.5);  // Texture 0
+				weights.g = (float)((noise2 + 1) * 0.5);  // Texture 1
+				weights.b = (float)((noise3 + 1) * 0.5);  // Texture 2
+				weights.a = 1.0f - (weights.r + weights.g + weights.b) / 3.0f; // Texture 3
+
+				// Normalize weights
+				float sum = weights.r + weights.g + weights.b + weights.a;
+				weights /= sum;
+
+				splatData[y * width + x] = weights;
+			}
+		}
+
+		glCreateTextures(GL_TEXTURE_2D, 1, &m_splatmapTexture);
+		glTextureStorage2D(m_splatmapTexture, 1, GL_RGBA32F, width, height);
+		glTextureSubImage2D(m_splatmapTexture, 0, 0, 0, width, height, GL_RGBA, GL_FLOAT, splatData.data());
+		glTextureParameteri(m_splatmapTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTextureParameteri(m_splatmapTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTextureParameteri(m_splatmapTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTextureParameteri(m_splatmapTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	}
+
+	void CMyApp::GenerateTerrain() {
+		GenerateHeightmap();
+		GenerateSplatmap();
+
+		const int gridSize = 256;
+		const float gridSpacing = 1.0f;
+
+		std::vector<glm::vec2> vertices;
+		std::vector<GLuint> indices;
+
+		// Generate vertices
+		for (int z = 0; z < gridSize; ++z) {
+			for (int x = 0; x < gridSize; ++x) {
+				float u = x / (float)(gridSize - 1);
+				float v = z / (float)(gridSize - 1);
+				vertices.emplace_back(u, v);
+			}
+		}
+
+		// Generate indices
+		for (int z = 0; z < gridSize - 1; ++z) {
+			for (int x = 0; x < gridSize - 1; ++x) {
+				int topLeft = z * gridSize + x;
+				int topRight = topLeft + 1;
+				int bottomLeft = (z + 1) * gridSize + x;
+				int bottomRight = bottomLeft + 1;
+
+				indices.push_back(topLeft);
+				indices.push_back(bottomLeft);
+				indices.push_back(topRight);
+
+				indices.push_back(topRight);
+				indices.push_back(bottomLeft);
+				indices.push_back(bottomRight);
+			}
+		}
+
+		m_terrainIndexCount = indices.size();
+
+		// Create VAO, VBO and IBO
+		glCreateVertexArrays(1, &m_terrainVAO);
+		glCreateBuffers(1, &m_terrainVBO);
+		glCreateBuffers(1, &m_terrainIBO);
+
+		// Upload vertex data
+		glNamedBufferStorage(m_terrainVBO, vertices.size() * sizeof(glm::vec2), vertices.data(), 0);
+
+		// Upload index data
+		glNamedBufferStorage(m_terrainIBO, indices.size() * sizeof(GLuint), indices.data(), 0);
+
+		// Set up VAO
+		glVertexArrayVertexBuffer(m_terrainVAO, 0, m_terrainVBO, 0, sizeof(glm::vec2));
+		glVertexArrayElementBuffer(m_terrainVAO, m_terrainIBO);
+
+		glEnableVertexArrayAttrib(m_terrainVAO, 0);
+		glVertexArrayAttribFormat(m_terrainVAO, 0, 2, GL_FLOAT, GL_FALSE, 0);
+		glVertexArrayAttribBinding(m_terrainVAO, 0, 0);
+	}
+
+	void CMyApp::RenderTerrain() {
+		glUseProgram(m_terrainProgram);
+
+		glUniform1f(glGetUniformLocation(m_terrainProgram, "verticalOffset"), m_terrainVerticalOffset);
+
+		// Set texture unit indices first
+		glUniform1i(glGetUniformLocation(m_terrainProgram, "splatmap"), 1);
+		glUniform1i(glGetUniformLocation(m_terrainProgram, "groundTextures[0]"), 2);
+		glUniform1i(glGetUniformLocation(m_terrainProgram, "groundTextures[1]"), 3);
+		glUniform1i(glGetUniformLocation(m_terrainProgram, "groundTextures[2]"), 4);
+		glUniform1i(glGetUniformLocation(m_terrainProgram, "groundTextures[3]"), 5);
+		glUniform1i(glGetUniformLocation(m_terrainProgram, "rockTexture"), 6);
+		glUniform1i(glGetUniformLocation(m_terrainProgram, "sandTexture"), 7);
+		glUniform1i(glGetUniformLocation(m_terrainProgram, "snowTexture"), 8);
+
+		// Rest of your rendering code...
+		glm::mat4 world = glm::mat4(1.0f);
+		world = glm::scale(world, glm::vec3(100.0f, 1.0f, 100.0f));
+		world = glm::translate(world, glm::vec3(-0.5f, 0.0f, -0.5f));
+
+		glUniformMatrix4fv(m_ulTerrainWorld, 1, GL_FALSE, glm::value_ptr(world));
+		glUniformMatrix4fv(m_ulTerrainWorldIT, 1, GL_FALSE, glm::value_ptr(glm::transpose(glm::inverse(world))));
+		glUniformMatrix4fv(m_ulTerrainViewProj, 1, GL_FALSE, glm::value_ptr(m_camera.GetViewProj()));
+		glUniform1f(m_ulTerrainHeightScale, m_terrainHeightScale);
+		glUniform1f(m_ulTerrainTexScale, m_terrainTexScale);
+
+		// Bind textures to correct units
+		glBindTextureUnit(0, m_heightmapTexture);
+		glBindTextureUnit(1, m_splatmapTexture);
+		for (int i = 0; i < 4; ++i) {
+			glBindTextureUnit(2 + i, m_groundTextures[i]);
+		}
+		glBindTextureUnit(6, m_rockTexture);
+		glBindTextureUnit(7, m_sandTexture);
+		glBindTextureUnit(8, m_snowTexture);
+
+		// Bind samplers
+		for (int i = 0; i < 9; ++i) {
+			glBindSampler(i, m_SamplerID);
+		}
+
+		// Set lighting uniforms
+		SetLightingUniforms(32.0f, glm::vec3(0.1f), glm::vec3(1.0f), glm::vec3(0.5f));
+
+		// Draw terrain
+		glBindVertexArray(m_terrainVAO);
+		glDrawElements(GL_TRIANGLES, m_terrainIndexCount, GL_UNSIGNED_INT, nullptr);
+		glBindVertexArray(0);
+
+		// Unbind textures and samplers
+		for (int i = 0; i < 9; ++i) {
+			glBindTextureUnit(i, 0);
+			glBindSampler(i, 0);
+		}
 	}
 
 	void CMyApp::CleanShaders()
@@ -215,8 +502,9 @@
 	void CMyApp::InitTextures()
 	{
 		glCreateSamplers(1, &m_SamplerID);
-		glSamplerParameteri(m_SamplerID, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glSamplerParameteri(m_SamplerID, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+		glSamplerParameteri(m_SamplerID, GL_TEXTURE_WRAP_S, GL_REPEAT);  // Changed to REPEAT
+		glSamplerParameteri(m_SamplerID, GL_TEXTURE_WRAP_T, GL_REPEAT);  // Changed to REPEAT
 		glSamplerParameteri(m_SamplerID, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glSamplerParameteri(m_SamplerID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -289,6 +577,10 @@
 		m_moonLd = glm::vec3(0.2f, 0.2f, 0.3f);
 		m_moonLs = glm::vec3(0.3f, 0.3f, 0.4f);
 
+		InitTerrainShaders();
+		InitTerrainTextures();
+		GenerateTerrain();
+
 		return true;
 	}
 
@@ -307,7 +599,7 @@
 
 		m_cameraManipulator.Update(updateInfo.DeltaTimeInSec);
 
-		m_waterWorldTransform = glm::translate(glm::vec3(0.0f, -2.0f, 0.0f));
+		m_waterWorldTransform = glm::translate(glm::vec3(0.0f, -2.0f, 0.0f)) * glm::scale(glm::vec3(50.0f, 1.0f, 50.0f));
 	}
 
 void CMyApp::SetLightingUniforms(float Shininess, glm::vec3 Ka, glm::vec3 Kd, glm::vec3 Ks)
@@ -388,7 +680,7 @@ void CMyApp::SetLightingUniforms(float Shininess, glm::vec3 Ka, glm::vec3 Kd, gl
 		float waterShininess = m_Shininess;
 		SetLightingUniforms(waterShininess, waterKa, waterKd, waterKs);
 
-		glUniform1f(ul("Alpha"), 1.0f); // 0.7 = 70% opacity
+		glUniform1f(ul("Alpha"), 0.5f); // 0.7 = 70% opacity
 
 		glUniform1f(ul("ElapsedTimeInSec"), m_ElapsedTimeInSec);
 
@@ -401,6 +693,7 @@ void CMyApp::SetLightingUniforms(float Shininess, glm::vec3 Ka, glm::vec3 Kd, gl
 		glDisable(GL_BLEND);
 		glEnable(GL_CULL_FACE);
 
+		RenderTerrain();
 		// ===========================
 
 		// shader kikapcsolasa
@@ -642,9 +935,7 @@ void CMyApp::UpdateDayNightCycle(float deltaTime)
 
 	// Lighting parameters
 	m_La = m_sunColor * (0.1f + 0.1f * sunIntensity);
-
 	m_Ld = m_sunColor * (0.3f + 0.5f * sunIntensity);
-
 	m_Ls = m_sunColor * (0.5f + 0.5f * sunIntensity);
 
 	// Moon-specific lighting parameters

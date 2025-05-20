@@ -92,6 +92,7 @@
     <ClCompile Include="includes\ProgramBuilder.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Includes\Perlin.h" />
     <ClInclude Include="MyApp.h" />
     <ClInclude Include="includes\SDL_GLDebugMessageCallback.h" />
     <ClInclude Include="includes\GLUtils.hpp" />
@@ -100,36 +101,26 @@
     <ClInclude Include="includes\ParametricSurfaceMesh.hpp" />
     <ClInclude Include="includes\CameraManipulator.h" />
     <ClInclude Include="includes\ProgramBuilder.h" />
-    <ClInclude Include="Perlin.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Frag_Terrain.frag" />
+    <None Include="Shaders\Frag_Terrain.frag" />
     <None Include="Shaders\Frag_Water.frag" />
     <None Include="Shaders\Vert_PosNormTex.vert" />
     <None Include="Shaders\Vert_Skybox.vert" />
     <None Include="Shaders\Frag_Skybox.frag" />
     <None Include="Shaders\Frag_LightingNoFaceCull.frag" />
+    <None Include="Shaders\Vert_Terrain.vert" />
     <None Include="Shaders\Vert_Water.vert" />
-    <None Include="Vert_Terrain.vert" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="Assets\Suzanne.obj" />
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="Assets\wood.jpg" />
-    <Image Include="Assets\zpos.png" />
-    <Image Include="Assets\xneg.png" />
-    <Image Include="Assets\xpos.png" />
-    <Image Include="Assets\yneg.png" />
-    <Image Include="Assets\ypos.png" />
-    <Image Include="Assets\zneg.png" />
-    <Image Include="Assets\danger_glass.png" />
-    <Image Include="Assets\lab_xneg.png" />
-    <Image Include="Assets\lab_xpos.png" />
-    <Image Include="Assets\lab_yneg.png" />
-    <Image Include="Assets\lab_ypos.png" />
-    <Image Include="Assets\lab_zneg.png" />
-    <Image Include="Assets\lab_zpos.png" />
+    <Image Include="Assets\ground1.jpg" />
+    <Image Include="Assets\ground2.jpg" />
+    <Image Include="Assets\ground3.jpg" />
+    <Image Include="Assets\ground4.jpg" />
+    <Image Include="Assets\rock.jpg" />
+    <Image Include="Assets\sand.jpg" />
+    <Image Include="Assets\sand2.jpg" />
+    <Image Include="Assets\snow.jpg" />
     <Image Include="Assets\water_texture.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

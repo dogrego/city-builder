@@ -74,7 +74,7 @@
     <ClInclude Include="includes\ProgramBuilder.h">
       <Filter>GL Utils</Filter>
     </ClInclude>
-    <ClInclude Include="Perlin.h">
+    <ClInclude Include="Includes\Perlin.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -94,65 +94,42 @@
     <None Include="Shaders\Vert_Water.vert">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="Frag_Terrain.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Vert_Terrain.vert">
-      <Filter>Shaders</Filter>
-    </None>
     <None Include="Shaders\Frag_Water.frag">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="Shaders\Frag_Terrain.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\Vert_Terrain.vert">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="Assets\Suzanne.obj">
-      <Filter>Assets</Filter>
-    </Text>
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="Assets\wood.jpg">
-      <Filter>Assets</Filter>
-    </Image>
-    <Image Include="Assets\zpos.png">
-      <Filter>Assets</Filter>
-    </Image>
-    <Image Include="Assets\xneg.png">
-      <Filter>Assets</Filter>
-    </Image>
-    <Image Include="Assets\xpos.png">
-      <Filter>Assets</Filter>
-    </Image>
-    <Image Include="Assets\yneg.png">
-      <Filter>Assets</Filter>
-    </Image>
-    <Image Include="Assets\ypos.png">
-      <Filter>Assets</Filter>
-    </Image>
-    <Image Include="Assets\zneg.png">
-      <Filter>Assets</Filter>
-    </Image>
-    <Image Include="Assets\danger_glass.png">
-      <Filter>Assets</Filter>
-    </Image>
-    <Image Include="Assets\lab_xneg.png">
-      <Filter>Assets</Filter>
-    </Image>
-    <Image Include="Assets\lab_xpos.png">
-      <Filter>Assets</Filter>
-    </Image>
-    <Image Include="Assets\lab_yneg.png">
-      <Filter>Assets</Filter>
-    </Image>
-    <Image Include="Assets\lab_ypos.png">
-      <Filter>Assets</Filter>
-    </Image>
-    <Image Include="Assets\lab_zneg.png">
-      <Filter>Assets</Filter>
-    </Image>
-    <Image Include="Assets\lab_zpos.png">
-      <Filter>Assets</Filter>
-    </Image>
     <Image Include="Assets\water_texture.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\ground1.jpg">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\ground2.jpg">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\ground3.jpg">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\ground4.jpg">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\rock.jpg">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\sand.jpg">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\sand2.jpg">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\snow.jpg">
       <Filter>Assets</Filter>
     </Image>
   </ItemGroup>

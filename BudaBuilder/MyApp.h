@@ -17,6 +17,8 @@
 #include "Camera.h"
 #include "CameraManipulator.h"
 
+#include "Perlin.h"
+
 struct SUpdateInfo
 {
 	float ElapsedTimeInSec = 0.0f; // Program indulása óta eltelt idő
@@ -127,5 +129,41 @@ protected:
 
 	void UpdateDayNightCycle(float deltaTime);
 	float smoothstep(float edge0, float edge1, float x);
+
+	// Terrain
+	GLuint m_terrainVAO = 0;
+	GLuint m_terrainVBO = 0;
+	GLuint m_terrainIBO = 0;
+	size_t m_terrainIndexCount = 0;
+
+	// Textures
+	GLuint m_heightmapTexture = 0;
+	GLuint m_splatmapTexture = 0;
+	GLuint m_groundTextures[4] = { 0 };
+	GLuint m_rockTexture = 0;
+	GLuint m_sandTexture = 0;
+	GLuint m_snowTexture = 0;
+
+	// Uniform locations
+	GLint m_ulTerrainWorld = -1;
+	GLint m_ulTerrainWorldIT = -1;
+	GLint m_ulTerrainViewProj = -1;
+	GLint m_ulTerrainHeightScale = -1;
+	GLint m_ulTerrainTexScale = -1;
+
+	// Terrain parameters
+	float m_terrainVerticalOffset = 4.0f;
+	float m_terrainHeightScale = 50.0f;
+	float m_terrainTexScale = 10.0f;
+
+	// Shader program
+	GLuint m_terrainProgram = 0;
+
+	void GenerateTerrain();
+	void GenerateHeightmap();
+	void GenerateSplatmap();
+	void InitTerrainShaders();
+	void InitTerrainTextures();
+	void RenderTerrain();
 };
 
