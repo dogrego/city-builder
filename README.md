@@ -1,5 +1,5 @@
 # Procedural Terrain-Based City Builder
-This repository contains a city-building application where users can place buildings and create settlements on a procedurally generated 3D terrain. The terrain and its textures are created using GPU-based rendering techniques, including procedural Perlin noise and multi-texture blending.
+A 3D city-building simulation featuring procedurally generated terrain with dynamic texturing, building placement mechanics, day-night cycles, and ocean rendering. Built with modern OpenGL.
 
 ## Features
 
@@ -36,3 +36,11 @@ This repository contains a city-building application where users can place build
   - Proper normal calculation for reflections
   - Procedurally lowered edges to create natural shoreline
   - Restrictions against building underwater
+ 
+### Dependencies
+- OpenGL (4.3+)
+- SDL2 (Cross-platform window and event management)
+- SDL2-image with libjpeg-turbo support (Image loading)
+- GLEW (OpenGL extension loading)
+- GLM (OpenGL Mathematics library)
+- Dear ImGui (v1.89+) with SDL2 and OpenGL3 bindings
