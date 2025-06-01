@@ -3,6 +3,7 @@
 	#include "ObjParser.h"
 	#include "ParametricSurfaceMesh.hpp"
 	#include "ProgramBuilder.h"
+	#include "Buildings.hpp"
 
 	#include <imgui.h>
 
@@ -349,12 +350,6 @@
 	{
 		glDeleteProgram(m_programID);
 		glDeleteProgram(m_programWaterID);
-
-		CleanSkyboxShaders();
-	}
-
-	void CMyApp::CleanSkyboxShaders()
-	{
 		glDeleteProgram(m_programSkyboxID);
 	}
 
@@ -446,7 +441,7 @@
 
 	void CMyApp::CleanGeometry()
 	{
-		CleanSkyboxGeometry();
+		CleanOGLObject(m_SkyboxGPU);
 	}
 
 	void CMyApp::InitSkyboxGeometry()
@@ -494,11 +489,6 @@
 		m_SkyboxGPU = CreateGLObjectFromMesh(skyboxCPU, { { 0, offsetof(glm::vec3,x), 3, GL_FLOAT } });
 	}
 
-	void CMyApp::CleanSkyboxGeometry()
-	{
-		CleanOGLObject(m_SkyboxGPU);
-	}
-
 	void CMyApp::InitTextures()
 	{
 		glCreateSamplers(1, &m_SamplerID);
@@ -516,14 +506,20 @@
 		glGenerateTextureMipmap(m_waterTextureID);
 
 		InitSkyboxTextures();
+
+		// Load building texture
+		ImageRGBA buildingImage = ImageFromFile("Assets/House1_Diffuse.png");
+		glCreateTextures(GL_TEXTURE_2D, 1, &m_buildingTextureID);
+		glTextureStorage2D(m_buildingTextureID, NumberOfMIPLevels(buildingImage), GL_RGBA8, buildingImage.width, buildingImage.height);
+		glTextureSubImage2D(m_buildingTextureID, 0, 0, 0, buildingImage.width, buildingImage.height, GL_RGBA, GL_UNSIGNED_BYTE, buildingImage.data());
+		glGenerateTextureMipmap(m_buildingTextureID);
 	}
 
 	void CMyApp::CleanTextures()
 	{
 		glDeleteTextures(1, &m_waterTextureID);
-
-		CleanSkyboxTextures();
-
+		glDeleteTextures(1, &m_SkyboxTextureID);
+		glDeleteTextures(1, &m_buildingTextureID);
 		glDeleteSamplers(1, &m_SamplerID);
 	}
 
@@ -532,11 +528,6 @@
 
 		glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &m_SkyboxTextureID);
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-	}
-
-	void CMyApp::CleanSkyboxTextures()
-	{
-		glDeleteTextures(1, &m_SkyboxTextureID);
 	}
 
 	bool CMyApp::Init()
@@ -581,6 +572,8 @@
 		InitTerrainTextures();
 		GenerateTerrain();
 
+		Buildings::Initialize();
+
 		return true;
 	}
 
@@ -588,6 +581,7 @@
 	{
 		CleanShaders();
 		CleanGeometry();
+		Buildings::Cleanup();
 		CleanTextures();
 	}
 
@@ -694,6 +688,7 @@ void CMyApp::SetLightingUniforms(float Shininess, glm::vec3 Ka, glm::vec3 Kd, gl
 		glEnable(GL_CULL_FACE);
 
 		RenderTerrain();
+		RenderBuildings();
 		// ===========================
 
 		// shader kikapcsolasa
@@ -949,4 +944,40 @@ void CMyApp::UpdateDayNightCycle(float deltaTime)
 	{
 		x = glm::clamp((x - edge0) / (edge1 - edge0), 0.0f, 1.0f);
 		return x * x * (3.0f - 2.0f * x);
+	}
+
+	void CMyApp::RenderBuildings()
+	{
+		glUseProgram(m_programID);
+
+		// Bind building texture
+		glBindTextureUnit(0, m_buildingTextureID);
+		glBindSampler(0, m_SamplerID);
+
+		// Example building positions and types
+		std::vector<std::pair<glm::vec3, BuildingType>> buildings = {
+			{glm::vec3(5, 0, 5), STUDIO_FLAT},
+			{glm::vec3(10, 0, 10), SMALL_HOUSE},
+			{glm::vec3(-10, 0, 10), FAMILY_HOUSE},
+			{glm::vec3(0, 0, -10), TOWER},
+			{glm::vec3(15, 0, -5), APARTMENT_BLOCK}
+		};
+
+		for (const auto& building : buildings) {
+			glm::mat4 world = glm::translate(building.first);
+			glUniformMatrix4fv(ul("world"), 1, GL_FALSE, glm::value_ptr(world));
+			glUniformMatrix4fv(ul("worldInvTransp"), 1, GL_FALSE, glm::value_ptr(glm::transpose(glm::inverse(world))));
+			glUniformMatrix4fv(ul("viewProj"), 1, GL_FALSE, glm::value_ptr(m_camera.GetViewProj()));
+
+			// Set material properties for buildings
+			SetLightingUniforms(32.0f, glm::vec3(0.1f), glm::vec3(0.8f), glm::vec3(0.5f));
+
+			const BuildingData& data = Buildings::GetBuildingData(building.second);
+			glBindVertexArray(data.vao);
+			glDrawArrays(GL_TRIANGLES, 0, data.vertexCount);
+		}
+
+		glBindVertexArray(0);
+		glBindTextureUnit(0, 0);
+		glBindSampler(0, 0);
 	}

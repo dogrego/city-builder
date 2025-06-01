@@ -48,6 +48,9 @@
     <ClCompile Include="includes\ProgramBuilder.cpp">
       <Filter>GL Utils</Filter>
     </ClCompile>
+    <ClCompile Include="Includes\Buildings.cpp">
+      <Filter>GL Utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MyApp.h">
@@ -76,6 +79,9 @@
     </ClInclude>
     <ClInclude Include="Includes\Perlin.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\Buildings.hpp">
+      <Filter>GL Utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

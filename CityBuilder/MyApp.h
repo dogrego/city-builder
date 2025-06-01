@@ -92,7 +92,6 @@ protected:
 	void InitShaders();
 	void CleanShaders();
 	void InitSkyboxShaders();
-	void CleanSkyboxShaders();
 
 	// Geometriával kapcsolatos változók
 
@@ -104,18 +103,17 @@ protected:
 	void InitGeometry();
 	void CleanGeometry();
 	void InitSkyboxGeometry();
-	void CleanSkyboxGeometry();
 
 	// Textúrázás, és változói
 	GLuint m_SamplerID = 0;
 
 	GLuint m_SkyboxTextureID = 0;
 	GLuint m_waterTextureID = 0;
+	GLuint m_buildingTextureID = 0;
 
 	void InitTextures();
 	void CleanTextures();
 	void InitSkyboxTextures();
-	void CleanSkyboxTextures();
 
 	void SetLightingUniforms(float Shininess, glm::vec3 Ka = glm::vec3(1.0), glm::vec3 Kd = glm::vec3(1.0), glm::vec3 Ks = glm::vec3(1.0));
 
@@ -165,5 +163,6 @@ protected:
 	void InitTerrainShaders();
 	void InitTerrainTextures();
 	void RenderTerrain();
+	void RenderBuildings();
 };
 
