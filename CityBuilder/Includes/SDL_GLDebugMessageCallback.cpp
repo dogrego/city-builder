@@ -42,16 +42,17 @@
 
 #include "SDL2/SDL_log.h"
 
-// Callback függvény a debug üzenetek kiírására 
+// Callback függvény a debug üzenetek kiírására
 void GLAPIENTRY SDL_GLDebugMessageCallback(GLenum source, GLenum type, GLuint id,
-    GLenum severity, GLsizei length,
-    const GLchar* msg, const void* data)
+                                           GLenum severity, GLsizei length,
+                                           const GLchar *msg, const void *data)
 {
-    const char* _source;
-    const char* _type;
-    const char* _severity;
+    const char *_source;
+    const char *_type;
+    const char *_severity;
 
-    switch (source) {
+    switch (source)
+    {
     case GL_DEBUG_SOURCE_API:
         _source = "API";
         break;
@@ -81,7 +82,8 @@ void GLAPIENTRY SDL_GLDebugMessageCallback(GLenum source, GLenum type, GLuint id
         break;
     }
 
-    switch (type) {
+    switch (type)
+    {
     case GL_DEBUG_TYPE_ERROR:
         _type = "ERROR";
         break;
@@ -115,7 +117,8 @@ void GLAPIENTRY SDL_GLDebugMessageCallback(GLenum source, GLenum type, GLuint id
         break;
     }
 
-    switch (severity) {
+    switch (severity)
+    {
     case GL_DEBUG_SEVERITY_HIGH:
         _severity = "HIGH";
         break;
@@ -143,7 +146,6 @@ void GLAPIENTRY SDL_GLDebugMessageCallback(GLenum source, GLenum type, GLuint id
         (severity != GL_DEBUG_SEVERITY_NOTIFICATION ? SDL_LOG_PRIORITY_ERROR : SDL_LOG_PRIORITY_INFO),
         "OpenGL debug message [%d], type: %s, severity: %s, source: %s, message:\n%s\n\n",
         id, _type, _severity, _source, msg);
-    
 
     // Add __debugbreak if _DEBUG is defined (automatic in visual studio)
     // note: __debugbreak is specific for MSVC, won't work with gcc/clang
@@ -155,10 +157,7 @@ void GLAPIENTRY SDL_GLDebugMessageCallback(GLenum source, GLenum type, GLuint id
     //     (a nyíl a hibát jelző utasítást követő sorra mutat!).
     // 3. A program innen folytatható (zöld háromszög - Continue / F5)
     //     vagy megállítható (piros négyzet - Stop / Shift + F5).
-    if ( OGLIsDebuggerPresent()
-        && (severity != GL_DEBUG_SEVERITY_NOTIFICATION)
-        && (type != GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR)
-        && (type != GL_DEBUG_TYPE_OTHER))
+    if (OGLIsDebuggerPresent() && (severity != GL_DEBUG_SEVERITY_NOTIFICATION) && (type != GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR) && (type != GL_DEBUG_TYPE_OTHER))
         OGL_DEBUGBREAK();
 #endif
 }

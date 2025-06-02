@@ -105,8 +105,11 @@
     <ClInclude Include="includes\ProgramBuilder.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Shaders\Frag_BuildingPick.frag" />
+    <None Include="Shaders\Frag_Pick.frag" />
     <None Include="Shaders\Frag_Terrain.frag" />
     <None Include="Shaders\Frag_Water.frag" />
+    <None Include="Shaders\Vert_Pick.vert" />
     <None Include="Shaders\Vert_PosNormTex.vert" />
     <None Include="Shaders\Vert_Skybox.vert" />
     <None Include="Shaders\Frag_Skybox.frag" />

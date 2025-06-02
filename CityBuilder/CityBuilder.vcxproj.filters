@@ -109,6 +109,15 @@
     <None Include="Shaders\Vert_Terrain.vert">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="Shaders\Vert_Pick.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\Frag_Pick.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\Frag_BuildingPick.frag">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\water_texture.png">

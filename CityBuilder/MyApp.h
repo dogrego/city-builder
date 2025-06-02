@@ -18,11 +18,12 @@
 #include "CameraManipulator.h"
 
 #include "Perlin.h"
+#include "buildings.hpp"
 
 struct SUpdateInfo
 {
 	float ElapsedTimeInSec = 0.0f; // Program indulása óta eltelt idő
-	float DeltaTimeInSec = 0.0f; // Előző Update óta eltelt idő
+	float DeltaTimeInSec = 0.0f;	 // Előző Update óta eltelt idő
 };
 
 class CMyApp
@@ -34,19 +35,20 @@ public:
 	bool Init();
 	void Clean();
 
-	void Update(const SUpdateInfo&);
+	void Update(const SUpdateInfo &);
 	void Render();
 	void RenderGUI();
 
-	void KeyboardDown(const SDL_KeyboardEvent&);
-	void KeyboardUp(const SDL_KeyboardEvent&);
-	void MouseMove(const SDL_MouseMotionEvent&);
-	void MouseDown(const SDL_MouseButtonEvent&);
-	void MouseUp(const SDL_MouseButtonEvent&);
-	void MouseWheel(const SDL_MouseWheelEvent&);
+	void KeyboardDown(const SDL_KeyboardEvent &);
+	void KeyboardUp(const SDL_KeyboardEvent &);
+	void MouseMove(const SDL_MouseMotionEvent &);
+	void MouseDown(const SDL_MouseButtonEvent &);
+	void MouseUp(const SDL_MouseButtonEvent &);
+	void MouseWheel(const SDL_MouseWheelEvent &);
 	void Resize(int, int);
 
-	void OtherEvent(const SDL_Event&);
+	void OtherEvent(const SDL_Event &);
+
 protected:
 	void SetupDebugCallback();
 
@@ -63,9 +65,9 @@ protected:
 	// OpenGL-es dolgok
 
 	// shaderekhez szükséges változók
-	GLuint m_programID = 0;		  // shaderek programja
+	GLuint m_programID = 0;				// shaderek programja
 	GLuint m_programSkyboxID = 0; // skybox programja
-	GLuint m_programWaterID = 0;   // viz programja
+	GLuint m_programWaterID = 0;	// viz programja
 
 	// Fényforrás- ...
 	glm::vec4 m_lightPosition = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
@@ -122,7 +124,7 @@ protected:
 	glm::vec3 m_moonColor;
 	glm::vec3 m_skyTopColor;
 	glm::vec3 m_skyBottomColor;
-	float m_timeOfDay = 0.0f; // 0-1 representing 24 hours
+	float m_timeOfDay = 0.0f;	 // 0-1 representing 24 hours
 	float m_timeSpeed = 0.01f; // Speed of time progression
 
 	void UpdateDayNightCycle(float deltaTime);
@@ -137,7 +139,7 @@ protected:
 	// Textures
 	GLuint m_heightmapTexture = 0;
 	GLuint m_splatmapTexture = 0;
-	GLuint m_groundTextures[4] = { 0 };
+	GLuint m_groundTextures[4] = {0};
 	GLuint m_rockTexture = 0;
 	GLuint m_sandTexture = 0;
 	GLuint m_snowTexture = 0;
@@ -164,5 +166,32 @@ protected:
 	void InitTerrainTextures();
 	void RenderTerrain();
 	void RenderBuildings();
-};
 
+	struct BuildingInstance
+	{
+		glm::vec3 position;
+		BuildingType type;
+		std::vector<float> originalTerrainHeights; // Stores original terrain heights under building
+	};
+
+	std::vector<BuildingInstance> m_buildings;
+	BuildingType m_selectedBuildingType = SMALL_HOUSE;
+	glm::vec3 *m_pickData = nullptr; // For reading FBO data
+	bool m_showBuildingPreview = true;
+	glm::vec3 m_buildingPreviewPos;
+
+	// FBO related
+	bool m_frameBufferCreated = false;
+	GLuint m_depthBuffer;
+	GLuint m_colorBuffer;
+	GLuint m_frameBuffer;
+	GLuint m_pickProgramID;
+
+	void CreateFrameBuffer(int width, int height);
+	void UpdateBuildingPreview(const glm::vec3 &pos);
+	bool CheckAABBCollision(const glm::vec3 &pos1, const glm::vec3 &size1,
+													const glm::vec3 &pos2, const glm::vec3 &size2);
+	void PlaceBuilding(const glm::vec3 &pos);
+	void GetViewportSize(int &width, int &height);
+	float CMyApp::SampleHeightmap(const glm::vec2 &uv);
+};
