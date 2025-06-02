@@ -1,8 +1,8 @@
 # Visual Studio build artifacts
-BudaBuilder/BudaBuilder/
-BudaBuilder/.vs/
-BudaBuilder/x64/
-BudaBuilder/*/x64/
+CityBuilder/CityBuilder/
+CityBuilder/.vs/
+CityBuilder/x64/
+CityBuilder/*/x64/
 
 # Visual Studio user-specific files
 *.user
