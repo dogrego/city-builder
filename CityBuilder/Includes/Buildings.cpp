@@ -47,6 +47,25 @@ const BuildingData &Buildings::GetBuildingData(BuildingType type)
     }
 }
 
+glm::vec2 Buildings::GetBuildingSize(BuildingType type)
+{
+    switch (type)
+    {
+    case STUDIO_FLAT:
+        return glm::vec2(1.0f, 1.0f);
+    case SMALL_HOUSE:
+        return glm::vec2(1.0f, 1.0f);
+    case FAMILY_HOUSE:
+        return glm::vec2(1.5f, 1.0f);
+    case TOWER:
+        return glm::vec2(1.0f, 1.0f);
+    case APARTMENT_BLOCK:
+        return glm::vec2(1.5f, 0.75f);
+    default:
+        return glm::vec2(1.5f, 1.5f);
+    }
+}
+
 void Buildings::SetupVAOVBO(const std::vector<Vertex> &vertices, BuildingData &data)
 {
     glGenVertexArrays(1, &data.vao);
@@ -180,15 +199,19 @@ void Buildings::CreateFamilyHouse(float sizeX, float sizeZ, float height)
     float mainSizeX = sizeX * 0.6f;
     float mainSizeZ = sizeZ * 0.6f;
 
+    // Calculate total dimensions including extension
+    float totalSizeX = mainSizeX + sizeX * 0.4f;
+    float centerOffsetX = totalSizeX / 2 - mainSizeX / 2;
+
     glm::vec3 mainPositions[8] = {
-        {-mainSizeX / 2, 0, mainSizeZ / 2},      // Front-left-bottom
-        {mainSizeX / 2, 0, mainSizeZ / 2},       // Front-right-bottom
-        {mainSizeX / 2, height, mainSizeZ / 2},  // Front-right-top
-        {-mainSizeX / 2, height, mainSizeZ / 2}, // Front-left-top
-        {-mainSizeX / 2, 0, -mainSizeZ / 2},     // Back-left-bottom
-        {mainSizeX / 2, 0, -mainSizeZ / 2},      // Back-right-bottom
-        {mainSizeX / 2, height, -mainSizeZ / 2}, // Back-right-top
-        {-mainSizeX / 2, height, -mainSizeZ / 2} // Back-left-top
+        {-mainSizeX / 2 - centerOffsetX, 0, mainSizeZ / 2},      // Front-left-bottom
+        {mainSizeX / 2 - centerOffsetX, 0, mainSizeZ / 2},       // Front-right-bottom
+        {mainSizeX / 2 - centerOffsetX, height, mainSizeZ / 2},  // Front-right-top
+        {-mainSizeX / 2 - centerOffsetX, height, mainSizeZ / 2}, // Front-left-top
+        {-mainSizeX / 2 - centerOffsetX, 0, -mainSizeZ / 2},     // Back-left-bottom
+        {mainSizeX / 2 - centerOffsetX, 0, -mainSizeZ / 2},      // Back-right-bottom
+        {mainSizeX / 2 - centerOffsetX, height, -mainSizeZ / 2}, // Back-right-top
+        {-mainSizeX / 2 - centerOffsetX, height, -mainSizeZ / 2} // Back-left-top
     };
 
     // Extension part (shorter part of the L)
@@ -196,8 +219,8 @@ void Buildings::CreateFamilyHouse(float sizeX, float sizeZ, float height)
     float extSizeZ = sizeZ * 0.4f;
 
     // Position the extension to form an L shape (attached to the back-right of the main part)
-    float extOffsetX = mainSizeX / 2;  // Extend along X-axis (right side)
-    float extOffsetZ = -mainSizeZ / 2; // Extend along Z-axis (back side)
+    float extOffsetX = mainSizeX / 2 - centerOffsetX; // Extend along X-axis (right side)
+    float extOffsetZ = -mainSizeZ / 2;                // Extend along Z-axis (back side)
 
     glm::vec3 extPositions[8] = {
         {extOffsetX, 0, extOffsetZ + extSizeZ},                 // Front-left-bottom

@@ -118,6 +118,7 @@
     <None Include="Shaders\Vert_Water.vert" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="Assets\concrete.jpg" />
     <Image Include="Assets\ground1.jpg" />
     <Image Include="Assets\ground2.jpg" />
     <Image Include="Assets\ground3.jpg" />

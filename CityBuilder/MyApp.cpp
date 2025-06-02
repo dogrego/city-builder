@@ -50,26 +50,18 @@ void CMyApp::InitShaders()
 			.ShaderStage(GL_FRAGMENT_SHADER, "Shaders/Frag_Water.frag")
 			.Link();
 
-	InitSkyboxShaders();
+	m_programSkyboxID = glCreateProgram();
+	ProgramBuilder{m_programSkyboxID}
+			.ShaderStage(GL_VERTEX_SHADER, "Shaders/Vert_Skybox.vert")
+			.ShaderStage(GL_FRAGMENT_SHADER, "Shaders/Frag_Skybox.frag")
+			.Link();
 
 	m_pickProgramID = glCreateProgram();
 	ProgramBuilder{m_pickProgramID}
 			.ShaderStage(GL_VERTEX_SHADER, "Shaders/Vert_Pick.vert")
 			.ShaderStage(GL_FRAGMENT_SHADER, "Shaders/Frag_Pick.frag")
 			.Link();
-}
 
-void CMyApp::InitSkyboxShaders()
-{
-	m_programSkyboxID = glCreateProgram();
-	ProgramBuilder{m_programSkyboxID}
-			.ShaderStage(GL_VERTEX_SHADER, "Shaders/Vert_Skybox.vert")
-			.ShaderStage(GL_FRAGMENT_SHADER, "Shaders/Frag_Skybox.frag")
-			.Link();
-}
-
-void CMyApp::InitTerrainShaders()
-{
 	m_terrainProgram = glCreateProgram();
 	ProgramBuilder{m_terrainProgram}
 			.ShaderStage(GL_VERTEX_SHADER, "Shaders/Vert_Terrain.vert")
@@ -120,6 +112,12 @@ void CMyApp::InitTerrainTextures()
 	glTextureStorage2D(m_snowTexture, NumberOfMIPLevels(snowImage), GL_RGBA8, snowImage.width, snowImage.height);
 	glTextureSubImage2D(m_snowTexture, 0, 0, 0, snowImage.width, snowImage.height, GL_RGBA, GL_UNSIGNED_BYTE, snowImage.data());
 	glGenerateTextureMipmap(m_snowTexture);
+
+	ImageRGBA concreteImage = ImageFromFile("Assets/concrete.jpg");
+	glCreateTextures(GL_TEXTURE_2D, 1, &m_concreteTexture);
+	glTextureStorage2D(m_concreteTexture, NumberOfMIPLevels(concreteImage), GL_RGBA8, concreteImage.width, concreteImage.height);
+	glTextureSubImage2D(m_concreteTexture, 0, 0, 0, concreteImage.width, concreteImage.height, GL_RGBA, GL_UNSIGNED_BYTE, concreteImage.data());
+	glGenerateTextureMipmap(m_concreteTexture);
 }
 
 void CMyApp::GenerateHeightmap()
@@ -298,6 +296,7 @@ void CMyApp::RenderTerrain()
 	glUniform1i(glGetUniformLocation(m_terrainProgram, "rockTexture"), 6);
 	glUniform1i(glGetUniformLocation(m_terrainProgram, "sandTexture"), 7);
 	glUniform1i(glGetUniformLocation(m_terrainProgram, "snowTexture"), 8);
+	glUniform1i(glGetUniformLocation(m_terrainProgram, "concreteTexture"), 9);
 
 	// Rest of your rendering code...
 	glm::mat4 world = glm::mat4(1.0f);
@@ -320,6 +319,7 @@ void CMyApp::RenderTerrain()
 	glBindTextureUnit(6, m_rockTexture);
 	glBindTextureUnit(7, m_sandTexture);
 	glBindTextureUnit(8, m_snowTexture);
+	glBindTextureUnit(9, m_concreteTexture);
 
 	// Bind samplers
 	for (int i = 0; i < 9; ++i)
@@ -584,7 +584,6 @@ bool CMyApp::Init()
 	m_moonLd = glm::vec3(0.2f, 0.2f, 0.3f);
 	m_moonLs = glm::vec3(0.3f, 0.3f, 0.4f);
 
-	InitTerrainShaders();
 	InitTerrainTextures();
 	GenerateTerrain();
 
@@ -1208,27 +1207,7 @@ void CMyApp::UpdateBuildingPreview(const glm::vec3 &pos)
 	m_showBuildingPreview = true;
 
 	// Check for collisions using building dimensions
-	glm::vec2 buildingSize;
-	switch (m_selectedBuildingType)
-	{
-	case STUDIO_FLAT:
-		buildingSize = glm::vec2(1.0f, 1.0f);
-		break;
-	case SMALL_HOUSE:
-		buildingSize = glm::vec2(1.0f, 1.0f);
-		break;
-	case FAMILY_HOUSE:
-		buildingSize = glm::vec2(1.0f, 1.0f);
-		break;
-	case TOWER:
-		buildingSize = glm::vec2(1.0f, 1.0f);
-		break;
-	case APARTMENT_BLOCK:
-		buildingSize = glm::vec2(1.0f, 0.5f);
-		break;
-	default:
-		buildingSize = glm::vec2(1.0f, 1.0f);
-	}
+	glm::vec2 buildingSize = Buildings::GetBuildingSize(m_selectedBuildingType);
 
 	// Create AABB for the new building
 	glm::vec2 newMin = glm::vec2(pos.x, pos.z) - buildingSize * 0.5f;
@@ -1237,27 +1216,7 @@ void CMyApp::UpdateBuildingPreview(const glm::vec3 &pos)
 	for (const auto &building : m_buildings)
 	{
 		// Get accurate size for existing building
-		glm::vec2 existingSize;
-		switch (building.type)
-		{
-		case STUDIO_FLAT:
-			existingSize = glm::vec2(1.0f, 1.0f);
-			break;
-		case SMALL_HOUSE:
-			existingSize = glm::vec2(1.0f, 1.0f);
-			break;
-		case FAMILY_HOUSE:
-			existingSize = glm::vec2(1.0f, 1.0f);
-			break;
-		case TOWER:
-			existingSize = glm::vec2(1.0f, 1.0f);
-			break;
-		case APARTMENT_BLOCK:
-			existingSize = glm::vec2(1.0f, 0.5f);
-			break;
-		default:
-			existingSize = glm::vec2(1.0f, 1.0f);
-		}
+		glm::vec2 existingSize = Buildings::GetBuildingSize(m_selectedBuildingType);
 
 		// Create AABB for existing building
 		glm::vec2 existingMin = glm::vec2(building.position.x, building.position.z) - existingSize * 0.5f;
@@ -1281,27 +1240,7 @@ void CMyApp::UpdateBuildingPreview(const glm::vec3 &pos)
 void CMyApp::PlaceBuilding(const glm::vec3 &pos)
 {
 	// Get building dimensions based on type
-	glm::vec2 buildingSize;
-	switch (m_selectedBuildingType)
-	{
-	case STUDIO_FLAT:
-		buildingSize = glm::vec2(1.0f, 1.0f);
-		break;
-	case SMALL_HOUSE:
-		buildingSize = glm::vec2(1.0f, 1.0f);
-		break;
-	case FAMILY_HOUSE:
-		buildingSize = glm::vec2(1.0f, 1.0f);
-		break;
-	case TOWER:
-		buildingSize = glm::vec2(1.0f, 1.0f);
-		break;
-	case APARTMENT_BLOCK:
-		buildingSize = glm::vec2(1.0f, 0.5f);
-		break;
-	default:
-		buildingSize = glm::vec2(1.0f, 1.0f);
-	}
+	glm::vec2 buildingSize = Buildings::GetBuildingSize(m_selectedBuildingType);
 
 	// Create AABB for the new building
 	glm::vec2 newMin = glm::vec2(pos.x, pos.z) - buildingSize * 0.5f;
@@ -1310,36 +1249,12 @@ void CMyApp::PlaceBuilding(const glm::vec3 &pos)
 	// Check for collisions with existing buildings
 	for (const auto &building : m_buildings)
 	{
-		// Get accurate size for existing building
-		glm::vec2 existingSize;
-		switch (building.type)
-		{
-		case STUDIO_FLAT:
-			existingSize = glm::vec2(1.0f, 1.0f);
-			break;
-		case SMALL_HOUSE:
-			existingSize = glm::vec2(1.0f, 1.0f);
-			break;
-		case FAMILY_HOUSE:
-			existingSize = glm::vec2(1.0f, 1.0f);
-			break;
-		case TOWER:
-			existingSize = glm::vec2(1.0f, 1.0f);
-			break;
-		case APARTMENT_BLOCK:
-			existingSize = glm::vec2(1.0f, 0.5f);
-			break;
-		default:
-			existingSize = glm::vec2(1.0f, 1.0f);
-		}
+		glm::vec2 existingSize = Buildings::GetBuildingSize(m_selectedBuildingType);
 
-		// Create AABB for existing building
 		glm::vec2 existingMin = glm::vec2(building.position.x, building.position.z) - existingSize * 0.5f;
 		glm::vec2 existingMax = glm::vec2(building.position.x, building.position.z) + existingSize * 0.5f;
 
-		// More precise AABB collision check with optional padding
-		const float PADDING = 1.2f; // Small padding to prevent buildings from touching
-
+		const float PADDING = 1.2f;
 		bool collision = (newMin.x < existingMax.x + PADDING &&
 											newMax.x + PADDING > existingMin.x &&
 											newMin.y < existingMax.y + PADDING &&
@@ -1353,42 +1268,155 @@ void CMyApp::PlaceBuilding(const glm::vec3 &pos)
 
 	// Calculate UV coordinates from world position
 	glm::vec2 uv(
-			(pos.x + 50.0f) / 100.0f, // Convert from [-50,50] to [0,1]
-			(pos.z + 50.0f) / 100.0f	// Convert from [-50,50] to [0,1]
-	);
+			(pos.x + 50.0f) / 100.0f,
+			(pos.z + 50.0f) / 100.0f);
 
-	// Sample height from heightmap
-	float height = SampleHeightmap(uv);
+	// Apply concrete texture around the building (2 unit radius)
+	ApplyConcreteTexture(uv, m_selectedBuildingType); // Convert radius to UV space
+
+	// Sample height from heightmap and smooth the terrain
+	float height = SmoothTerrainUnderBuilding(uv, buildingSize);
 
 	// Create new building instance at the correct height
 	BuildingInstance newBuilding;
 	newBuilding.position = glm::vec3(pos.x, height, pos.z);
 	newBuilding.type = m_selectedBuildingType;
 
-	// Store original terrain heights (optional)
-	const int SAMPLES = 8;
-	for (int i = 0; i < SAMPLES; i++)
-	{
-		float angle = 2.0f * glm::pi<float>() * i / SAMPLES;
-		glm::vec2 offset(cos(angle), sin(angle));
-		glm::vec2 samplePos = glm::vec2(pos.x, pos.z) + offset * buildingSize.x;
-
-		// Convert to UV
-		glm::vec2 sampleUV(
-				(samplePos.x + 50.0f) / 100.0f,
-				(samplePos.y + 50.0f) / 100.0f);
-
-		newBuilding.originalTerrainHeights.push_back(SampleHeightmap(sampleUV));
-	}
-
 	m_buildings.push_back(newBuilding);
 }
 
-bool CMyApp::CheckAABBCollision(const glm::vec3 &pos1, const glm::vec3 &size1,
-																const glm::vec3 &pos2, const glm::vec3 &size2)
+float CMyApp::SmoothTerrainUnderBuilding(const glm::vec2 &centerUV, const glm::vec2 &size)
 {
-	return (pos1.x < pos2.x + size2.x && pos1.x + size1.x > pos2.x) &&
-				 (pos1.z < pos2.z + size2.z && pos1.z + size1.z > pos2.z);
+	// Determine smoothing area
+	float radiusX = size.x / 100.0f + 0.005f;
+	float radiusY = size.y / 100.0f + 0.005f;
+
+	glm::vec2 minUV = glm::clamp(centerUV - glm::vec2(radiusX, radiusY), 0.0f, 1.0f);
+	glm::vec2 maxUV = glm::clamp(centerUV + glm::vec2(radiusX, radiusY), 0.0f, 1.0f);
+
+	// Get texture dimensions
+	GLint width, height;
+	glBindTexture(GL_TEXTURE_2D, m_heightmapTexture);
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
+
+	int minX = static_cast<int>(minUV.x * (width - 1));
+	int maxX = static_cast<int>(maxUV.x * (width - 1));
+	int minY = static_cast<int>(minUV.y * (height - 1));
+	int maxY = static_cast<int>(maxUV.y * (height - 1));
+
+	// Get current height data
+	std::vector<float> heightData((maxX - minX + 1) * (maxY - minY + 1));
+	glGetTextureSubImage(m_heightmapTexture, 0, minX, minY, 0,
+											 maxX - minX + 1, maxY - minY + 1, 1,
+											 GL_RED, GL_FLOAT, heightData.size() * sizeof(float), heightData.data());
+
+	// Check for nearby buildings and find the closest one
+	float closestBuildingHeight = 0.0f;
+	float minDistance = FLT_MAX;
+	float overlapMargin = 0.02f; // in UV space
+
+	for (const auto &b : m_buildings)
+	{
+		glm::vec2 bCenterUV = glm::vec2(b.position.x, b.position.z);
+		float distance = glm::distance(centerUV, bCenterUV);
+
+		if (distance < minDistance)
+		{
+			minDistance = distance;
+			if (!b.originalTerrainHeights.empty())
+			{
+				float sum = std::accumulate(b.originalTerrainHeights.begin(), b.originalTerrainHeights.end(), 0.0f);
+				closestBuildingHeight = sum / b.originalTerrainHeights.size();
+			}
+		}
+	}
+
+	// If we're close to an existing building, use its height
+	const float MAX_DISTANCE_TO_MATCH_HEIGHT = 0.05f; // in UV space
+	if (minDistance < MAX_DISTANCE_TO_MATCH_HEIGHT && !m_buildings.empty())
+	{
+		// Don't modify terrain, just return the closest building's height
+		return (closestBuildingHeight * m_terrainHeightScale) + m_terrainVerticalOffset - 25;
+	}
+
+	// Otherwise, proceed with normal smoothing (for isolated buildings)
+	float sum = std::accumulate(heightData.begin(), heightData.end(), 0.0f);
+	float averageHeight = sum / heightData.size();
+
+	std::fill(heightData.begin(), heightData.end(), averageHeight);
+
+	// Update texture
+	glTextureSubImage2D(m_heightmapTexture, 0, minX, minY,
+											maxX - minX + 1, maxY - minY + 1, GL_RED, GL_FLOAT, heightData.data());
+
+	// Store original heights for this new building
+	if (!m_buildings.empty())
+	{
+		m_buildings.back().originalTerrainHeights = heightData;
+	}
+
+	return (averageHeight * m_terrainHeightScale) + m_terrainVerticalOffset - 25;
+}
+
+void CMyApp::ApplyConcreteTexture(const glm::vec2 &centerUV, BuildingType buildingType)
+{
+	// Get building dimensions from Buildings class
+	glm::vec2 buildingSize = Buildings::GetBuildingSize(buildingType);
+
+	// Add margin around the building (e.g., 0.5 units on each side)
+	const float margin = 1.0f;
+	glm::vec2 concreteSize = buildingSize + glm::vec2(margin * 2);
+
+	// Convert size from world units to UV space (100 units = 1.0 in UV)
+	glm::vec2 sizeUV = concreteSize / 100.0f;
+
+	// Rest of your existing implementation...
+	GLint width, height;
+	glBindTexture(GL_TEXTURE_2D, m_splatmapTexture);
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
+
+	int minX = static_cast<int>((centerUV.x - sizeUV.x / 2) * width);
+	int maxX = static_cast<int>((centerUV.x + sizeUV.x / 2) * width);
+	int minY = static_cast<int>((centerUV.y - sizeUV.y / 2) * height);
+	int maxY = static_cast<int>((centerUV.y + sizeUV.y / 2) * height);
+
+	// Clamp to texture bounds
+	minX = glm::clamp(minX, 0, width - 1);
+	maxX = glm::clamp(maxX, 0, width - 1);
+	minY = glm::clamp(minY, 0, height - 1);
+	maxY = glm::clamp(maxY, 0, height - 1);
+
+	// Read current splatmap data
+	std::vector<glm::vec4> splatData((maxX - minX + 1) * (maxY - minY + 1));
+	glGetTextureSubImage(m_splatmapTexture, 0,
+											 minX, minY, 0,
+											 maxX - minX + 1, maxY - minY + 1, 1,
+											 GL_RGBA, GL_FLOAT,
+											 splatData.size() * sizeof(glm::vec4), splatData.data());
+
+	// Modify splatmap data
+	for (int y = minY; y <= maxY; y++)
+	{
+		for (int x = minX; x <= maxX; x++)
+		{
+			int idx = (y - minY) * (maxX - minX + 1) + (x - minX);
+
+			// Check if the texel is within the square area (no distance calculation)
+			// For a rectangular area, use different radii for X/Y (e.g., radiusX, radiusY)
+			splatData[idx].r *= 0.2f; // Reduce other textures
+			splatData[idx].g *= 0.2f;
+			splatData[idx].b *= 0.2f;
+			splatData[idx].a = 0.8f; // Max concrete weight
+		}
+	}
+
+	// Update texture
+	glTextureSubImage2D(m_splatmapTexture, 0,
+											minX, minY,
+											maxX - minX + 1, maxY - minY + 1,
+											GL_RGBA, GL_FLOAT, splatData.data());
 }
 
 void CMyApp::RenderBuildings()

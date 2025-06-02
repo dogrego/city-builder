@@ -93,7 +93,6 @@ protected:
 	// Shaderek inicializálása, és törtlése
 	void InitShaders();
 	void CleanShaders();
-	void InitSkyboxShaders();
 
 	// Geometriával kapcsolatos változók
 
@@ -143,6 +142,7 @@ protected:
 	GLuint m_rockTexture = 0;
 	GLuint m_sandTexture = 0;
 	GLuint m_snowTexture = 0;
+	GLuint m_concreteTexture = 0;
 
 	// Uniform locations
 	GLint m_ulTerrainWorld = -1;
@@ -162,7 +162,6 @@ protected:
 	void GenerateTerrain();
 	void GenerateHeightmap();
 	void GenerateSplatmap();
-	void InitTerrainShaders();
 	void InitTerrainTextures();
 	void RenderTerrain();
 	void RenderBuildings();
@@ -189,9 +188,9 @@ protected:
 
 	void CreateFrameBuffer(int width, int height);
 	void UpdateBuildingPreview(const glm::vec3 &pos);
-	bool CheckAABBCollision(const glm::vec3 &pos1, const glm::vec3 &size1,
-													const glm::vec3 &pos2, const glm::vec3 &size2);
 	void PlaceBuilding(const glm::vec3 &pos);
 	void GetViewportSize(int &width, int &height);
-	float CMyApp::SampleHeightmap(const glm::vec2 &uv);
+	float SampleHeightmap(const glm::vec2 &uv);
+	void ApplyConcreteTexture(const glm::vec2& centerUV, BuildingType buildingType);
+	float SmoothTerrainUnderBuilding(const glm::vec2& centerUV, const glm::vec2& size);
 };

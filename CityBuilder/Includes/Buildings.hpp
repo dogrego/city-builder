@@ -27,6 +27,7 @@ public:
     static void Initialize();
     static void Cleanup();
     static const BuildingData &GetBuildingData(BuildingType type);
+    static glm::vec2 GetBuildingSize(BuildingType type);
 
 private:
     static void CreateStudioFlat(float sizeXZ = 2.0f);

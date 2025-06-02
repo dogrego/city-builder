@@ -10,6 +10,7 @@ uniform sampler2D groundTextures[4];
 uniform sampler2D rockTexture;
 uniform sampler2D sandTexture;
 uniform sampler2D snowTexture;
+uniform sampler2D concreteTexture;
 uniform float texScale;
 
 // Lighting uniforms - simplified
@@ -37,7 +38,7 @@ void main() {
     vec3 tex0 = texture(groundTextures[0], texCoord * texScale * 2.0).rgb;
     vec3 tex1 = texture(groundTextures[1], texCoord * texScale * 1.0).rgb;
     vec3 tex2 = texture(groundTextures[2], texCoord * texScale * 0.5).rgb;
-    vec3 tex3 = texture(groundTextures[3], texCoord * texScale * 0.25).rgb;
+    vec3 tex3 = texture(concreteTexture, texCoord * texScale * 0.5).rgb;
     
     // Blend ground textures
     vec3 baseColor = tex0 * weights.r + tex1 * weights.g + tex2 * weights.b + tex3 * weights.a;
