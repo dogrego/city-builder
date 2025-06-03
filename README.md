@@ -1,9 +1,11 @@
 # Procedural Terrain-Based City Builder
+
 A 3D city-building simulation featuring procedurally generated terrain with dynamic texturing, building placement mechanics, day-night cycles, and ocean rendering. Built with modern OpenGL.
 
 ## Features
 
 ### Terrain Generation
+
 - Procedurally generated heightmap terrain using Perlin noise
 - Splatmap texture blending system combining 4 different ground textures
 - Dynamic texturing based on:
@@ -13,6 +15,7 @@ A 3D city-building simulation featuring procedurally generated terrain with dyna
 - Automatically generated normal vectors
 
 ### Building System
+
 - 5 distinct building types:
   - Studio Flat (simple cube)
   - Small House (cube with pyramid roof)
@@ -27,6 +30,7 @@ A 3D city-building simulation featuring procedurally generated terrain with dyna
 - Framebuffer-based picking system for accurate placement
 
 ### Environment
+
 - Dynamic day/night cycle with:
   - Changing directional light color (yellowish at dawn, white at noon, orange at dusk)
   - Procedural skybox with color gradients
@@ -36,9 +40,10 @@ A 3D city-building simulation featuring procedurally generated terrain with dyna
   - Proper normal calculation for reflections
   - Procedurally lowered edges to create natural shoreline
   - Restrictions against building underwater
- 
+
 ### Dependencies
-- OpenGL (4.3+)
+
+- OpenGL (4.6+)
 - SDL2 (Cross-platform window and event management)
 - SDL2-image with libjpeg-turbo support (Image loading)
 - GLEW (OpenGL extension loading)

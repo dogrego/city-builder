@@ -191,6 +191,8 @@ protected:
 	void PlaceBuilding(const glm::vec3 &pos);
 	void GetViewportSize(int &width, int &height);
 	float SampleHeightmap(const glm::vec2 &uv);
-	void ApplyConcreteTexture(const glm::vec2& centerUV, BuildingType buildingType);
-	float SmoothTerrainUnderBuilding(const glm::vec2& centerUV, const glm::vec2& size);
+	void ApplyConcreteTexture(const glm::vec2 &centerUV, BuildingType buildingType);
+	float SmoothTerrainUnderBuilding(const glm::vec2 &centerUV, const glm::vec2 &size);
+
+	const float WATER_LEVEL = -0.8f;
 };

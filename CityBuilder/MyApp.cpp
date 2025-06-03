@@ -298,6 +298,17 @@ void CMyApp::RenderTerrain()
 	glUniform1i(glGetUniformLocation(m_terrainProgram, "snowTexture"), 8);
 	glUniform1i(glGetUniformLocation(m_terrainProgram, "concreteTexture"), 9);
 
+	// Sky and light colors
+	glUniform3fv(ul("sunColor"), 1, glm::value_ptr(m_sunColor));
+	glUniform3fv(ul("moonColor"), 1, glm::value_ptr(m_moonColor));
+	glUniform3fv(ul("skyTopColor"), 1, glm::value_ptr(m_skyTopColor));
+	glUniform3fv(ul("skyBottomColor"), 1, glm::value_ptr(m_skyBottomColor));
+
+	// Time and water properties
+	glUniform1f(ul("timeOfDay"), m_timeOfDay);
+	glUniform1f(ul("waterReflectivity"), 0.5f);
+	glUniform1f(ul("waterWaveIntensity"), 0.1f);
+
 	// Rest of your rendering code...
 	glm::mat4 world = glm::mat4(1.0f);
 	world = glm::scale(world, glm::vec3(100.0f, 1.0f, 100.0f));
@@ -1203,36 +1214,41 @@ void CMyApp::UpdateBuildingPreview(const glm::vec3 &pos)
 	// Sample height from heightmap
 	float height = SampleHeightmap(uv);
 
-	m_buildingPreviewPos = glm::vec3(pos.x, height, pos.z);
-	m_showBuildingPreview = true;
+	// Only show preview if above water
+	m_showBuildingPreview = (height >= WATER_LEVEL);
 
-	// Check for collisions using building dimensions
-	glm::vec2 buildingSize = Buildings::GetBuildingSize(m_selectedBuildingType);
-
-	// Create AABB for the new building
-	glm::vec2 newMin = glm::vec2(pos.x, pos.z) - buildingSize * 0.5f;
-	glm::vec2 newMax = glm::vec2(pos.x, pos.z) + buildingSize * 0.5f;
-
-	for (const auto &building : m_buildings)
+	if (m_showBuildingPreview)
 	{
-		// Get accurate size for existing building
-		glm::vec2 existingSize = Buildings::GetBuildingSize(m_selectedBuildingType);
+		m_buildingPreviewPos = glm::vec3(pos.x, height, pos.z);
 
-		// Create AABB for existing building
-		glm::vec2 existingMin = glm::vec2(building.position.x, building.position.z) - existingSize * 0.5f;
-		glm::vec2 existingMax = glm::vec2(building.position.x, building.position.z) + existingSize * 0.5f;
+		// Check for collisions using building dimensions
+		glm::vec2 buildingSize = Buildings::GetBuildingSize(m_selectedBuildingType);
 
-		const float PADDING = 1.2f; // Small padding to prevent buildings from touching
+		// Create AABB for the new building
+		glm::vec2 newMin = glm::vec2(pos.x, pos.z) - buildingSize * 0.5f;
+		glm::vec2 newMax = glm::vec2(pos.x, pos.z) + buildingSize * 0.5f;
 
-		bool collision = (newMin.x < existingMax.x + PADDING &&
-											newMax.x + PADDING > existingMin.x &&
-											newMin.y < existingMax.y + PADDING &&
-											newMax.y + PADDING > existingMin.y);
-
-		if (collision)
+		for (const auto &building : m_buildings)
 		{
-			m_showBuildingPreview = false;
-			break;
+			// Get accurate size for existing building
+			glm::vec2 existingSize = Buildings::GetBuildingSize(m_selectedBuildingType);
+
+			// Create AABB for existing building
+			glm::vec2 existingMin = glm::vec2(building.position.x, building.position.z) - existingSize * 0.5f;
+			glm::vec2 existingMax = glm::vec2(building.position.x, building.position.z) + existingSize * 0.5f;
+
+			const float PADDING = 1.2f; // Small padding to prevent buildings from touching
+
+			bool collision = (newMin.x < existingMax.x + PADDING &&
+												newMax.x + PADDING > existingMin.x &&
+												newMin.y < existingMax.y + PADDING &&
+												newMax.y + PADDING > existingMin.y);
+
+			if (collision)
+			{
+				m_showBuildingPreview = false;
+				break;
+			}
 		}
 	}
 }
@@ -1271,11 +1287,17 @@ void CMyApp::PlaceBuilding(const glm::vec3 &pos)
 			(pos.x + 50.0f) / 100.0f,
 			(pos.z + 50.0f) / 100.0f);
 
-	// Apply concrete texture around the building (2 unit radius)
+	// Apply concrete texture around the building
 	ApplyConcreteTexture(uv, m_selectedBuildingType); // Convert radius to UV space
 
 	// Sample height from heightmap and smooth the terrain
 	float height = SmoothTerrainUnderBuilding(uv, buildingSize);
+
+	// Check if position is underwater
+	if (height < WATER_LEVEL)
+	{
+		return; // Don't place building underwater
+	}
 
 	// Create new building instance at the correct height
 	BuildingInstance newBuilding;
@@ -1337,12 +1359,18 @@ float CMyApp::SmoothTerrainUnderBuilding(const glm::vec2 &centerUV, const glm::v
 	if (minDistance < MAX_DISTANCE_TO_MATCH_HEIGHT && !m_buildings.empty())
 	{
 		// Don't modify terrain, just return the closest building's height
-		return (closestBuildingHeight * m_terrainHeightScale) + m_terrainVerticalOffset - 25;
+		float finalHeight = (closestBuildingHeight * m_terrainHeightScale) + m_terrainVerticalOffset - 25;
+		// Ensure the height is not below water level
+		return std::max(finalHeight, WATER_LEVEL);
 	}
 
 	// Otherwise, proceed with normal smoothing (for isolated buildings)
 	float sum = std::accumulate(heightData.begin(), heightData.end(), 0.0f);
 	float averageHeight = sum / heightData.size();
+
+	// Ensure the smoothed height is not below water level (convert water level to heightmap space)
+	float waterLevelInHeightmapSpace = (WATER_LEVEL - m_terrainVerticalOffset + 25) / m_terrainHeightScale;
+	averageHeight = std::max(averageHeight, waterLevelInHeightmapSpace);
 
 	std::fill(heightData.begin(), heightData.end(), averageHeight);
 
@@ -1356,7 +1384,9 @@ float CMyApp::SmoothTerrainUnderBuilding(const glm::vec2 &centerUV, const glm::v
 		m_buildings.back().originalTerrainHeights = heightData;
 	}
 
-	return (averageHeight * m_terrainHeightScale) + m_terrainVerticalOffset - 25;
+	float finalHeight = (averageHeight * m_terrainHeightScale) + m_terrainVerticalOffset - 25;
+	// Final safety check (shouldn't be needed but just in case)
+	return std::max(finalHeight, WATER_LEVEL);
 }
 
 void CMyApp::ApplyConcreteTexture(const glm::vec2 &centerUV, BuildingType buildingType)
