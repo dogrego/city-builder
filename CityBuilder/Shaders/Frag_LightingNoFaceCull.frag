@@ -8,16 +8,17 @@ out vec4 outputColor;
 
 uniform sampler2D textureImage;
 uniform vec3 cameraPosition;
+uniform vec3 buildingColor = vec3(1.0);
 
 // Sun light properties
 uniform vec4 lightPosition = vec4(0.0, 1.0, 0.0, 0.0);
-uniform vec3 La = vec3(0.4, 0.4, 0.5);  // Sun ambient (used for day ambient)
+uniform vec3 La = vec3(0.6, 0.6, 0.7);  // Sun ambient (used for day ambient)
 uniform vec3 Ld = vec3(1.0, 1.0, 1.0);
 uniform vec3 Ls = vec3(1.0, 1.0, 1.0);
 
 // Moon light properties
 uniform vec4 moonLightPosition = vec4(0.0, -1.0, 0.0, 0.0);
-uniform vec3 moonLa = vec3(0.05, 0.05, 0.1);  // Moon ambient (used for night ambient)
+uniform vec3 moonLa = vec3(0.1, 0.1, 0.15);  // Moon ambient (used for night ambient)
 uniform vec3 moonLd = vec3(0.2, 0.2, 0.3);
 uniform vec3 moonLs = vec3(0.3, 0.3, 0.4);
 
@@ -99,7 +100,7 @@ void main()
     // Set up sun light
     LightProperties sunLight;
     sunLight.pos = lightPosition;
-    sunLight.La = vec3(0.0); // We're using global ambient instead
+    sunLight.La = vec3(0.0); // Using global ambient instead
     sunLight.Ld = Ld;
     sunLight.Ls = Ls;
     sunLight.constantAttenuation = 1.0;
@@ -109,7 +110,7 @@ void main()
     // Set up moon light (only active at night)
     LightProperties moonLight;
     moonLight.pos = moonLightPosition;
-    moonLight.La = vec3(0.0); // We're using global ambient instead
+    moonLight.La = vec3(0.0); // Using global ambient instead
     moonLight.Ld = isDay ? vec3(0.0) : moonLd;
     moonLight.Ls = isDay ? vec3(0.0) : moonLs;
     moonLight.constantAttenuation = 1.0;
@@ -132,9 +133,17 @@ void main()
     
     // Apply texture
     vec4 texColor = texture(textureImage, textureCoords);
-    outputColor = vec4(shadedColor, 1.0) * texColor;
+    
+    // Apply building color based on alpha mask
+    // Where alpha is 0 (windows), use original texture color
+    // Where alpha > 0 (walls, roof), blend between texture and building color
+    float colorBlend = texColor.a; // Use alpha channel as blend factor
+    vec3 finalColor = mix(texColor.rgb * 2.0, texColor.rgb * buildingColor, colorBlend);
+    
+    // Combine with lighting
+    outputColor = vec4(shadedColor * finalColor, texColor.a);
     
     // Ensure minimum visibility even at night
     float minVisibility = isDay ? 0.15 : 0.05;
-    outputColor.rgb = max(outputColor.rgb, vec3(minVisibility) * texColor.rgb);
+    outputColor.rgb = max(outputColor.rgb, vec3(minVisibility) * finalColor);
 }

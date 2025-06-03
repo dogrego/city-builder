@@ -23,7 +23,7 @@ CMyApp::~CMyApp()
 
 void CMyApp::SetupDebugCallback()
 {
-	// engedélyezzük és állítsuk be a debug callback függvényt ha debug context-ben vagyunk
+	// Enable and configure the debug callback function if we are in a debug context
 	GLint context_flags;
 	glGetIntegerv(GL_CONTEXT_FLAGS, &context_flags);
 	if (context_flags & GL_CONTEXT_FLAG_DEBUG_BIT)
@@ -312,7 +312,6 @@ void CMyApp::RenderTerrain()
 	// Rest of your rendering code...
 	glm::mat4 world = glm::mat4(1.0f);
 	world = glm::scale(world, glm::vec3(100.0f, 1.0f, 100.0f));
-	// world = glm::translate(world, glm::vec3(-0.5f, 0.0f, -0.5f));
 
 	glUniformMatrix4fv(m_ulTerrainWorld, 1, GL_FALSE, glm::value_ptr(world));
 	glUniformMatrix4fv(m_ulTerrainWorldIT, 1, GL_FALSE, glm::value_ptr(glm::transpose(glm::inverse(world))));
@@ -417,14 +416,14 @@ void CMyApp::InitGeometry()
 	MeshObject<Vertex> quadMeshCPU;
 	quadMeshCPU.vertexArray =
 			{
-					{glm::vec3(-1.0, -1.0, 0.0), glm::vec3(0.0, 0.0, 1.0), glm::vec2(0.0, 0.0)}, // első lap
+					{glm::vec3(-1.0, -1.0, 0.0), glm::vec3(0.0, 0.0, 1.0), glm::vec2(0.0, 0.0)}, // front face
 					{glm::vec3(1.0, -1.0, 0.0), glm::vec3(0.0, 0.0, 1.0), glm::vec2(1.0, 0.0)},
 					{glm::vec3(1.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 1.0), glm::vec2(1.0, 1.0)},
 					{glm::vec3(-1.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 1.0), glm::vec2(0.0, 1.0)}};
 
 	quadMeshCPU.indexArray =
 			{
-					0, 1, 2, // első lap
+					0, 1, 2, // front face
 					2, 3, 0};
 
 	m_quadGPU = CreateGLObjectFromMesh(quadMeshCPU, vertexAttribList);
@@ -456,12 +455,12 @@ void CMyApp::InitSkyboxGeometry()
 	MeshObject<glm::vec3> skyboxCPU =
 			{
 					std::vector<glm::vec3>{
-							// hátsó lap
+							// back face
 							glm::vec3(-1, -1, -1),
 							glm::vec3(1, -1, -1),
 							glm::vec3(1, 1, -1),
 							glm::vec3(-1, 1, -1),
-							// elülső lap
+							// front face
 							glm::vec3(-1, -1, 1),
 							glm::vec3(1, -1, 1),
 							glm::vec3(1, 1, 1),
@@ -469,42 +468,42 @@ void CMyApp::InitSkyboxGeometry()
 					},
 
 					std::vector<GLuint>{
-							// hátsó lap
+							// back face
 							0,
 							1,
 							2,
 							2,
 							3,
 							0,
-							// elülső lap
+							// front face
 							4,
 							6,
 							5,
 							6,
 							4,
 							7,
-							// bal
+							// laft face
 							0,
 							3,
 							4,
 							4,
 							3,
 							7,
-							// jobb
+							// right face
 							1,
 							5,
 							2,
 							5,
 							6,
 							2,
-							// alsó
+							// bottom face
 							1,
 							0,
 							4,
 							1,
 							4,
 							5,
-							// felső
+							// top face
 							3,
 							2,
 							6,
@@ -561,25 +560,25 @@ bool CMyApp::Init()
 {
 	SetupDebugCallback();
 
-	// törlési szín legyen kékes
+	// Set the clear color to a bluish tone
 	glClearColor(0.125f, 0.25f, 0.5f, 1.0f);
 
 	InitShaders();
 	InitGeometry();
 	InitTextures();
 
-	// egyéb inicializálás
+	// Additional initialization
 
-	glEnable(GL_CULL_FACE); // kapcsoljuk be a hátrafelé néző lapok eldobását
-	glCullFace(GL_BACK);		// GL_BACK: a kamerától "elfelé" néző lapok, GL_FRONT: a kamera felé néző lapok
+	glEnable(GL_CULL_FACE); // Enable back-face culling
+	glCullFace(GL_BACK);		// GL_BACK: faces pointing away from the camera, GL_FRONT: faces pointing toward the camera
 
-	glEnable(GL_DEPTH_TEST); // mélységi teszt bekapcsolása (takarás)
+	glEnable(GL_DEPTH_TEST); // Enable depth testing (occlusion)
 
-	// kamera
+	// Camera setup
 	m_camera.SetView(
-			glm::vec3(0.0, 7.0, 7.0),	 // honnan nézzük a színteret	   - eye
-			glm::vec3(0.0, 0.0, 0.0),	 // a színtér melyik pontját nézzük - at
-			glm::vec3(0.0, 1.0, 0.0)); // felfelé mutató irány a világban - up
+			glm::vec3(0.0, 150.0, 150.0), // Eye position, where we view the scene from
+			glm::vec3(0.0, 0.0, 0.0),			// Point in the scene we are looking at
+			glm::vec3(0.0, 1.0, 0.0));		// Up direction in the world
 
 	m_cameraManipulator.SetCamera(&m_camera);
 
@@ -588,9 +587,9 @@ bool CMyApp::Init()
 	m_skyTopColor = glm::vec3(0.5f, 0.7f, 1.0f);
 	m_skyBottomColor = glm::vec3(0.9f, 0.9f, 1.0f);
 
-	m_lightPosition = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f); // Directional light initially pointing down
+	m_lightPosition = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f); // Directional light initially pointing downward
 
-	m_moonLightPosition = glm::vec4(0.0f, -1.0f, 0.0f, 0.0f); // Initially pointing down
+	m_moonLightPosition = glm::vec4(0.0f, -1.0f, 0.0f, 0.0f); // Initially pointing downward
 	m_moonLa = glm::vec3(0.05f, 0.05f, 0.1f);
 	m_moonLd = glm::vec3(0.2f, 0.2f, 0.3f);
 	m_moonLs = glm::vec3(0.3f, 0.3f, 0.4f);
@@ -600,6 +599,7 @@ bool CMyApp::Init()
 
 	Buildings::Initialize();
 	m_pickData = new glm::vec3;
+	m_buildingColor = glm::vec3(1.0f, 1.0f, 1.0f); // Default white
 	CreateFrameBuffer(800, 600);
 
 	return true;
@@ -633,7 +633,7 @@ void CMyApp::Update(const SUpdateInfo &updateInfo)
 
 void CMyApp::SetLightingUniforms(float Shininess, glm::vec3 Ka, glm::vec3 Kd, glm::vec3 Ks)
 {
-	// - Fényforrások beállítása
+	// - Set light sources
 	glUniform3fv(ul("cameraPosition"), 1, glm::value_ptr(m_camera.GetEye()));
 
 	// Sun light
@@ -652,7 +652,7 @@ void CMyApp::SetLightingUniforms(float Shininess, glm::vec3 Ka, glm::vec3 Kd, gl
 	glUniform1f(ul("lightLinearAttenuation"), m_lightLinearAttenuation);
 	glUniform1f(ul("lightQuadraticAttenuation"), m_lightQuadraticAttenuation);
 
-	// - Anyagjellemzők beállítása
+	// - Set material properties
 	glUniform3fv(ul("Ka"), 1, glm::value_ptr(Ka));
 	glUniform3fv(ul("Kd"), 1, glm::value_ptr(Kd));
 	glUniform3fv(ul("Ks"), 1, glm::value_ptr(Ks));
@@ -664,8 +664,8 @@ void CMyApp::Render()
 {
 	// First pass - render to FBO for picking
 	glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
-	// töröljük a frampuffert (GL_COLOR_BUFFER_BIT)...
-	// ... és a mélységi Z puffert (GL_DEPTH_BUFFER_BIT)
+	// Clear the framebuffer (GL_COLOR_BUFFER_BIT)...
+	// ... and the depth Z-buffer (GL_DEPTH_BUFFER_BIT)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// Render terrain to FBO with pick shader
@@ -694,14 +694,14 @@ void CMyApp::Render()
 	glUniformMatrix4fv(ul("viewProj"), 1, GL_FALSE, glm::value_ptr(m_camera.GetViewProj()));
 	glUniformMatrix4fv(ul("world"), 1, GL_FALSE, glm::value_ptr(glm::translate(m_camera.GetEye())));
 
-	// Pass day-night cycle parameters - these will be used in the skybox fragment shader
+	// Pass day-night cycle parameters to skybox fragment shader
 	glUniform3fv(ul("sunDirection"), 1, glm::value_ptr(glm::normalize(glm::vec3(m_lightPosition))));
 	glUniform3fv(ul("moonDirection"), 1, glm::value_ptr(-glm::normalize(glm::vec3(m_lightPosition))));
 	glUniform3fv(ul("sunColor"), 1, glm::value_ptr(m_sunColor));
 	glUniform3fv(ul("moonColor"), 1, glm::value_ptr(m_moonColor));
 	glUniform3fv(ul("skyTopColor"), 1, glm::value_ptr(m_skyTopColor));
 	glUniform3fv(ul("skyBottomColor"), 1, glm::value_ptr(m_skyBottomColor));
-	glUniform1f(ul("timeOfDay"), m_timeOfDay); // Pass the current time of day
+	glUniform1f(ul("timeOfDay"), m_timeOfDay); // Pass current time of day
 
 	glBindVertexArray(m_SkyboxGPU.vaoID);
 	glDrawElements(GL_TRIANGLES, m_SkyboxGPU.count, GL_UNSIGNED_INT, nullptr);
@@ -741,11 +741,9 @@ void CMyApp::Render()
 	glEnable(GL_CULL_FACE);
 
 	// =========== TERRAIN ===========
-
 	RenderTerrain();
 
 	// =========== BUILDINGS ===========
-
 	// Render building preview if active
 	if (m_showBuildingPreview)
 	{
@@ -764,14 +762,14 @@ void CMyApp::Render()
 
 	// ===========================
 
-	// shader kikapcsolasa
+	// Disable shader
 	glUseProgram(0);
 
-	// - Textúrák kikapcsolása, minden egységre külön
+	// - Disable textures for each unit separately
 	glBindTextureUnit(0, 0);
 	glBindSampler(0, 0);
 
-	// VAO kikapcsolása
+	// Disable VAO
 	glBindVertexArray(0);
 }
 
@@ -815,7 +813,7 @@ void CMyApp::RenderGUI()
 	}
 	ImGui::End();
 
-	if (ImGui::Begin("Building Placement"))
+	if (ImGui::Begin("Building Settings"))
 	{
 		const char *buildingTypes[] = {
 				"Studio Flat",
@@ -830,6 +828,8 @@ void CMyApp::RenderGUI()
 			m_selectedBuildingType = static_cast<BuildingType>(currentType);
 		}
 
+		ImGui::ColorEdit3("Building Color", &m_buildingColor[0]);
+
 		ImGui::Text("Ctrl + Left click to place building");
 		ImGui::Text("Buildings placed: %d", m_buildings.size());
 	}
@@ -843,7 +843,7 @@ void CMyApp::RenderGUI()
 
 void CMyApp::KeyboardDown(const SDL_KeyboardEvent &key)
 {
-	if (key.repeat == 0) // Először lett megnyomva
+	if (key.repeat == 0) // Pressed for the first time
 	{
 		if (key.keysym.sym == SDLK_F5 && key.keysym.mod & KMOD_CTRL)
 		{
@@ -854,10 +854,10 @@ void CMyApp::KeyboardDown(const SDL_KeyboardEvent &key)
 		{
 			GLint polygonModeFrontAndBack[2] = {};
 			// https://registry.khronos.org/OpenGL-Refpages/gl4/html/glGet.xhtml
-			glGetIntegerv(GL_POLYGON_MODE, polygonModeFrontAndBack);													// Kérdezzük le a jelenlegi polygon módot! Külön adja a front és back módokat.
-			GLenum polygonMode = (polygonModeFrontAndBack[0] != GL_FILL ? GL_FILL : GL_LINE); // Váltogassuk FILL és LINE között!
+			glGetIntegerv(GL_POLYGON_MODE, polygonModeFrontAndBack);													// Query the current polygon mode, separate for front and back modes
+			GLenum polygonMode = (polygonModeFrontAndBack[0] != GL_FILL ? GL_FILL : GL_LINE); // Toggle between FILL and LINE modes
 			// https://registry.khronos.org/OpenGL-Refpages/gl4/html/glPolygonMode.xhtml
-			glPolygonMode(GL_FRONT_AND_BACK, polygonMode); // Állítsuk be az újat!
+			glPolygonMode(GL_FRONT_AND_BACK, polygonMode); // Set the new mode
 		}
 	}
 	m_cameraManipulator.KeyboardDown(key);
@@ -947,7 +947,7 @@ void CMyApp::MouseWheel(const SDL_MouseWheelEvent &wheel)
 	m_cameraManipulator.MouseWheel(wheel);
 }
 
-// a két paraméterben az új ablakméret szélessége (_w) és magassága (_h) található
+// The two parameters contain the new window width (_w) and height (_h)
 void CMyApp::Resize(int _w, int _h)
 {
 	glViewport(0, 0, _w, _h);
@@ -955,7 +955,7 @@ void CMyApp::Resize(int _w, int _h)
 	CreateFrameBuffer(_w, _h);
 }
 
-// Le nem kezelt, egzotikus esemény kezelése
+// Handling unprocessed, uncommon events
 // https://wiki.libsdl.org/SDL2/SDL_Event
 
 void CMyApp::OtherEvent(const SDL_Event &ev)
@@ -1109,7 +1109,7 @@ float CMyApp::smoothstep(float edge0, float edge1, float x)
 
 void CMyApp::CreateFrameBuffer(int width, int height)
 {
-	// takarítsunk, ha nem először hívják ezt a függvényt
+	// Clean up if this function is not being called for the first time
 	if (m_frameBufferCreated)
 	{
 		glDeleteRenderbuffers(1, &m_depthBuffer);
@@ -1303,6 +1303,7 @@ void CMyApp::PlaceBuilding(const glm::vec3 &pos)
 	BuildingInstance newBuilding;
 	newBuilding.position = glm::vec3(pos.x, height, pos.z);
 	newBuilding.type = m_selectedBuildingType;
+	newBuilding.color = m_buildingColor;
 
 	m_buildings.push_back(newBuilding);
 }
@@ -1465,6 +1466,9 @@ void CMyApp::RenderBuildings()
 		glUniformMatrix4fv(ul("worldInvTransp"), 1, GL_FALSE, glm::value_ptr(glm::transpose(glm::inverse(world))));
 		glUniformMatrix4fv(ul("viewProj"), 1, GL_FALSE, glm::value_ptr(m_camera.GetViewProj()));
 
+		// Pass building color to shader
+		glUniform3fv(glGetUniformLocation(m_programID, "buildingColor"), 1, glm::value_ptr(building.color));
+
 		// Set material properties for buildings
 		SetLightingUniforms(32.0f, glm::vec3(0.1f), glm::vec3(0.8f), glm::vec3(0.5f));
 
@@ -1473,12 +1477,15 @@ void CMyApp::RenderBuildings()
 		glDrawArrays(GL_TRIANGLES, 0, data.vertexCount);
 	}
 
-	// Render building preview if active
+	// Render building preview with current color
 	if (m_showBuildingPreview)
 	{
 		glm::mat4 world = glm::translate(m_buildingPreviewPos);
 		glUniformMatrix4fv(ul("world"), 1, GL_FALSE, glm::value_ptr(world));
 		glUniformMatrix4fv(ul("worldInvTransp"), 1, GL_FALSE, glm::value_ptr(glm::transpose(glm::inverse(world))));
+
+		// Use current building color for preview
+		glUniform3fv(glGetUniformLocation(m_programID, "buildingColor"), 1, glm::value_ptr(m_buildingColor));
 
 		const BuildingData &data = Buildings::GetBuildingData(m_selectedBuildingType);
 		glBindVertexArray(data.vao);

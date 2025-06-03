@@ -22,8 +22,8 @@
 
 struct SUpdateInfo
 {
-	float ElapsedTimeInSec = 0.0f; // Program indulása óta eltelt idő
-	float DeltaTimeInSec = 0.0f;	 // Előző Update óta eltelt idő
+	float ElapsedTimeInSec = 0.0f; // Time elapsed since program start
+	float DeltaTimeInSec = 0.0f;	 // Time elapsed since previous update
 };
 
 class CMyApp
@@ -52,24 +52,24 @@ public:
 protected:
 	void SetupDebugCallback();
 
-	// Adat változók
+	// Data variables
 
 	float m_ElapsedTimeInSec = 0.0f;
 
 	glm::mat4 m_waterWorldTransform;
 
-	// Kamera
+	// Camera
 	Camera m_camera;
 	CameraManipulator m_cameraManipulator;
 
-	// OpenGL-es dolgok
+	// OpenGL-related elements
 
-	// shaderekhez szükséges változók
-	GLuint m_programID = 0;				// shaderek programja
-	GLuint m_programSkyboxID = 0; // skybox programja
-	GLuint m_programWaterID = 0;	// viz programja
+	// Shader-related variables
+	GLuint m_programID = 0;				// Shader program
+	GLuint m_programSkyboxID = 0; // Skybox program
+	GLuint m_programWaterID = 0;	// Water program
 
-	// Fényforrás- ...
+	// Light source properties
 	glm::vec4 m_lightPosition = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
 
 	glm::vec3 m_La = glm::vec3(0.125f);
@@ -83,29 +83,28 @@ protected:
 	float m_lightLinearAttenuation = 0.0;
 	float m_lightQuadraticAttenuation = 0.0;
 
-	// ... és anyagjellemzők
+	// Material properties
 	glm::vec3 m_Ka = glm::vec3(1.0);
 	glm::vec3 m_Kd = glm::vec3(1.0);
 	glm::vec3 m_Ks = glm::vec3(1.0);
 
 	float m_Shininess = 1.0;
 
-	// Shaderek inicializálása, és törtlése
+	// Shader initialization and cleanup
 	void InitShaders();
 	void CleanShaders();
 
-	// Geometriával kapcsolatos változók
-
+	// Geometry-related variables
 	OGLObject m_SkyboxGPU = {};
 	OGLObject m_waterGPU = {};
 	OGLObject m_quadGPU = {};
 
-	// Geometria inicializálása, és törtlése
+	// Geometry initialization and cleanup
 	void InitGeometry();
 	void CleanGeometry();
 	void InitSkyboxGeometry();
 
-	// Textúrázás, és változói
+	// Texturing-related variables
 	GLuint m_SamplerID = 0;
 
 	GLuint m_SkyboxTextureID = 0;
@@ -170,6 +169,7 @@ protected:
 	{
 		glm::vec3 position;
 		BuildingType type;
+		glm::vec3 color;
 		std::vector<float> originalTerrainHeights; // Stores original terrain heights under building
 	};
 
@@ -178,6 +178,7 @@ protected:
 	glm::vec3 *m_pickData = nullptr; // For reading FBO data
 	bool m_showBuildingPreview = true;
 	glm::vec3 m_buildingPreviewPos;
+	glm::vec3 m_buildingColor;
 
 	// FBO related
 	bool m_frameBufferCreated = false;
