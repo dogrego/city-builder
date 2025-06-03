@@ -10,7 +10,7 @@
 #include <imgui_impl_sdl2.h>
 #include <imgui_impl_opengl3.h>
 
-// standard
+// Standard
 #include <iostream>
 #include <sstream>
 
@@ -18,72 +18,70 @@
 
 int main(int argc, char *args[])
 {
-	// 1. lépés: inicializáljuk az SDL-t
+	// Step 1: Initialize SDL
 
-	// Állítsuk be a hiba Logging függvényt
+	// Set the error logging function
 	SDL_LogSetPriority(SDL_LOG_CATEGORY_ERROR, SDL_LOG_PRIORITY_ERROR);
 
-	// a grafikus alrendszert kapcsoljuk csak be, ha gond van, akkor jelezzük és lépjünk ki
+	// Initialize the graphics subsystem, if there is an issue, log and exit
 	if (SDL_Init(SDL_INIT_VIDEO) == -1)
 	{
-		// írjuk ki a hibát és termináljon a program
+		// Log the error and terminate the program
 		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "[SDL initialization] Error during the SDL initialization: %s", SDL_GetError());
 		return 1;
 	}
 
-	// Miután az SDL Init lefutott, kilépésnél fusson le az alrendszerek kikapcsolása.
-	// Így akkor is lefut, ha valamilyen hiba folytán lépünk ki.
+	// Ensure SDL quits properly when the program exits, even in case of errors
 	std::atexit(SDL_Quit);
 
-	// 2. lépés: állítsuk be az OpenGL-es igényeinket, hozzuk létre az ablakunkat, indítsuk el az OpenGL-t
+	// Step 2: Configure OpenGL settings, create the window, and start OpenGL
 
-	// 2a: OpenGL indításának konfigurálása, ezt az ablak létrehozása előtt kell megtenni!
+	// Step 2a: Configure OpenGL startup settings before creating the window
 
-	// beállíthatjuk azt, hogy pontosan milyen OpenGL context-et szeretnénk létrehozni - ha nem tesszük, akkor
-	// automatikusan a legmagasabb elérhető verziójút kapjuk
+	// Define the exact OpenGL context to use, if not set, the highest available version will be used
 	// SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 	// SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
 
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 #ifdef _DEBUG
-	// ha debug módú a fordítás, legyen az OpenGL context is debug módban, ekkor működik a debug callback
+	// If compiled in debug mode, enable OpenGL debug context for debug callbacks
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
 #endif
 
-	// állítsuk be, hogy hány biten szeretnénk tárolni a piros, zöld, kék és átlátszatlansági információkat pixelenként
+	// Set the bit depth for storing red, green, blue, and alpha information per pixel
 	SDL_GL_SetAttribute(SDL_GL_BUFFER_SIZE, 32);
 	SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
 
-	// duplapufferelés
+	// Enable double buffering
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
-	// mélységi puffer hány bites legyen
+	// Define the bit depth of the depth buffer
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
-	// antialiasing - ha kell
+	// Enable anti-aliasing if needed
 	// SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS,  1);
 	// SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES,  2);
 
-	// hozzuk létre az ablakunkat
+	// Create the window
 	SDL_Window *win = nullptr;
-	win = SDL_CreateWindow("Hello SDL&OpenGL!",																					 // az ablak fejléce
-												 100,																													 // az ablak bal-felső sarkának kezdeti X koordinátája
-												 100,																													 // az ablak bal-felső sarkának kezdeti Y koordinátája
-												 800,																													 // ablak szélessége
-												 600,																													 // és magassága
-												 SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE); // megjelenítési tulajdonságok
+	win = SDL_CreateWindow("Hello SDL&OpenGL!",																					 // Window title
+												 100,																													 // Initial X coordinate of top-left corner
+												 100,																													 // Initial Y coordinate of top-left corner
+												 800,																													 // Window width
+												 600,																													 // Window height
+												 SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE); // Display properties
 
-	// ha nem sikerült létrehozni az ablakot, akkor írjuk ki a hibát, amit kaptunk és lépjünk ki
+	// If window creation fails, log the error and exit
 	if (win == nullptr)
 	{
 		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "[Window creation] Error during the SDL initialization: %s", SDL_GetError());
 		return 1;
 	}
 
-	// 3. lépés: hozzunk létre az OpenGL context-et - ezen keresztül fogunk rajzolni
+	// Step 3: Create the OpenGL context, used for rendering
 
 	SDL_GLContext context = SDL_GL_CreateContext(win);
 	if (context == nullptr)
@@ -92,10 +90,10 @@ int main(int argc, char *args[])
 		return 1;
 	}
 
-	// megjelenítés: várjuk be a vsync-et
+	// Enable vsync for rendering
 	SDL_GL_SetSwapInterval(1);
 
-	// indítsuk el a GLEW-t
+	// Initialize GLEW
 	GLenum error = glewInit();
 	if (error != GLEW_OK)
 	{
@@ -103,20 +101,20 @@ int main(int argc, char *args[])
 		return 1;
 	}
 
-	// kérdezzük le az OpenGL verziót
+	// Retrieve the OpenGL version
 	int glVersion[2] = {-1, -1};
 	glGetIntegerv(GL_MAJOR_VERSION, &glVersion[0]);
 	glGetIntegerv(GL_MINOR_VERSION, &glVersion[1]);
 
 	SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Running OpenGL %d.%d", glVersion[0], glVersion[1]);
 
+	// If OpenGL version retrieval failed, exit
 	if (glVersion[0] == -1 && glVersion[1] == -1)
 	{
 		SDL_GL_DeleteContext(context);
 		SDL_DestroyWindow(win);
 
-		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "[OGL context creation] Error during the inialization of the OGL context! Maybe one of the SDL_GL_SetAttribute(...) calls is erroneous.");
-
+		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "[OGL context creation] Error during the initialization of the OGL context! Maybe one of the SDL_GL_SetAttribute(...) calls is erroneous.");
 		return 1;
 	}
 
@@ -124,7 +122,7 @@ int main(int argc, char *args[])
 	window_title << "OpenGL " << glVersion[0] << "." << glVersion[1];
 	SDL_SetWindowTitle(win, window_title.str().c_str());
 
-	// Imgui init
+	// Initialize ImGui
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 
@@ -133,15 +131,15 @@ int main(int argc, char *args[])
 	ImGui_ImplSDL2_InitForOpenGL(win, context);
 	ImGui_ImplOpenGL3_Init();
 
-	// 4. lépés: indítsuk el a fő üzenetfeldolgozó ciklust
+	// Step 4: Start the main event processing loop
 
 	{
-		// véget kell-e érjen a program futása?
+		// Should the program terminate?
 		bool quit = false;
-		// feldolgozandó üzenet ide kerül
+		// Stores incoming events
 		SDL_Event ev;
 
-		// alkalmazás példánya
+		// Application instance
 		CMyApp app;
 		if (!app.Init())
 		{
@@ -151,18 +149,19 @@ int main(int argc, char *args[])
 			return 1;
 		}
 
-		// ImGui ablak megjelenítése
+		// Show ImGui window
 		bool ShowImGui = true;
 
 		while (!quit)
 		{
-			// amíg van feldolgozandó üzenet dolgozzuk fel mindet:
+			// Process incoming events
 			while (SDL_PollEvent(&ev))
 			{
 				ImGui_ImplSDL2_ProcessEvent(&ev);
-				bool is_mouse_captured = ImGui::GetIO().WantCaptureMouse;				// kell-e az imgui-nak az egér
-				bool is_keyboard_captured = ImGui::GetIO().WantCaptureKeyboard; // kell-e az imgui-nak a billentyűzet
+				bool is_mouse_captured = ImGui::GetIO().WantCaptureMouse;				// Does ImGui need the mouse?
+				bool is_keyboard_captured = ImGui::GetIO().WantCaptureKeyboard; // Does ImGui need the keyboard?
 
+				// Handling events
 				switch (ev.type)
 				{
 				case SDL_QUIT:
@@ -172,26 +171,29 @@ int main(int argc, char *args[])
 					if (ev.key.keysym.sym == SDLK_ESCAPE)
 						quit = true;
 
-					// ALT + ENTER vált teljes képernyőre, és vissza.
-					if ((ev.key.keysym.sym == SDLK_RETURN)														 // Enter le lett nyomva, ...
-							&& (ev.key.keysym.mod & KMOD_ALT)															 // az ALTal együtt, ...
-							&& !(ev.key.keysym.mod & (KMOD_SHIFT | KMOD_CTRL | KMOD_GUI))) // de más modifier gomb nem lett lenyomva.
+					// ALT + ENTER switches to full screen and back
+					if ((ev.key.keysym.sym == SDLK_RETURN)														 // Enter is pressed
+							&& (ev.key.keysym.mod & KMOD_ALT)															 // Along with ALT
+							&& !(ev.key.keysym.mod & (KMOD_SHIFT | KMOD_CTRL | KMOD_GUI))) // No other modifier keys are pressed
 					{
 						Uint32 FullScreenSwitchFlag = (SDL_GetWindowFlags(win) & SDL_WINDOW_FULLSCREEN_DESKTOP) ? 0 : SDL_WINDOW_FULLSCREEN_DESKTOP;
 						SDL_SetWindowFullscreen(win, FullScreenSwitchFlag);
-						is_keyboard_captured = true; // Az ALT+ENTER-t ne kapja meg az alkalmazás.
+						is_keyboard_captured = true; // The application should not receive the ALT+ENTER event
 					}
-					// CTRL + F1 ImGui megjelenítése vagy elrejtése
-					if ((ev.key.keysym.sym == SDLK_F1)																// F1 le lett nyomva, ...
-							&& (ev.key.keysym.mod & KMOD_CTRL)														// az CTRLal együtt, ...
-							&& !(ev.key.keysym.mod & (KMOD_SHIFT | KMOD_ALT | KMOD_GUI))) // de más modifier gomb nem lett lenyomva.
+
+					// CTRL + F1 toggles ImGui visibility
+					if ((ev.key.keysym.sym == SDLK_F1)																// F1 is pressed
+							&& (ev.key.keysym.mod & KMOD_CTRL)														// Along with CTRL
+							&& !(ev.key.keysym.mod & (KMOD_SHIFT | KMOD_ALT | KMOD_GUI))) // No other modifier keys are pressed
 					{
 						ShowImGui = !ShowImGui;
-						is_keyboard_captured = true; // A CTRL+F1-t ne kapja meg az alkalmazás.
+						is_keyboard_captured = true; // The application should not receive the CTRL+F1 event
 					}
+
 					if (!is_keyboard_captured)
 						app.KeyboardDown(ev.key);
 					break;
+
 				case SDL_KEYUP:
 					if (!is_keyboard_captured)
 						app.KeyboardUp(ev.key);
@@ -213,10 +215,10 @@ int main(int argc, char *args[])
 						app.MouseMove(ev.motion);
 					break;
 				case SDL_WINDOWEVENT:
-					// Néhány platformon (pl. Windows) a SIZE_CHANGED nem hívódik meg az első megjelenéskor.
-					// Szerintünk ez bug az SDL könytárban.
-					// Ezért ezt az esetet külön lekezeljük,
-					// mivel a MyApp esetlegesen tartalmazhat ablak méret függő beállításokat, pl. a kamera aspect ratioját a perspective() hívásnál.
+					// On some platforms (such as Windows), SIZE_CHANGED is not triggered on the initial display
+					// We believe this is a bug in the SDL library
+					// Therefore, this case is handled separately,
+					// as MyApp may contain window-size-dependent settings such as the camera aspect ratio in the perspective() function
 					if ((ev.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) || (ev.window.event == SDL_WINDOWEVENT_SHOWN))
 					{
 						int w, h;
@@ -224,25 +226,26 @@ int main(int argc, char *args[])
 						app.Resize(w, h);
 					}
 					break;
+
 				default:
 					app.OtherEvent(ev);
 				}
 			}
 
-			// Számoljuk ki az update-hez szükséges idő mennyiségeket!
-			static Uint32 LastTick = SDL_GetTicks(); // statikusan tároljuk, mi volt az előző "tick".
-			Uint32 CurrentTick = SDL_GetTicks();		 // Mi az aktuális.
-			SUpdateInfo updateInfo									 // Váltsuk át másodpercekre!
+			// Calculate the necessary update time values
+			static Uint32 LastTick = SDL_GetTicks(); // Store the previous tick statically
+			Uint32 CurrentTick = SDL_GetTicks();		 // Get the current tick
+			SUpdateInfo updateInfo									 // Convert to seconds
 					{
 							static_cast<float>(CurrentTick) / 1000.0f,
 							static_cast<float>(CurrentTick - LastTick) / 1000.0f};
-			LastTick = CurrentTick; // Mentsük el utolsóként az aktuális "tick"-et!
+			LastTick = CurrentTick; // Save the current tick as the last tick
 
 			app.Update(updateInfo);
 			app.Render();
 
 			ImGui_ImplOpenGL3_NewFrame();
-			ImGui_ImplSDL2_NewFrame(); // Ezután lehet imgui parancsokat hívni, egészen az ImGui::Render()-ig
+			ImGui_ImplSDL2_NewFrame(); // After this, ImGui commands can be issued until ImGui::Render()
 
 			ImGui::NewFrame();
 			if (ShowImGui)
@@ -253,13 +256,13 @@ int main(int argc, char *args[])
 			SDL_GL_SwapWindow(win);
 		}
 
-		// takarítson el maga után az objektumunk
+		// Cleanup application resources
 		app.Clean();
-	} // így az app destruktora még úgy fut le, hogy él a contextünk => a GPU erőforrásokat befoglaló osztályok destruktorai is itt futnak le
+	}
 
-	// 5. lépés: lépjünk ki
+	// Step 5: Exit the program
 
-	// ImGui de-init
+	// Deinitialize ImGui
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplSDL2_Shutdown();
 	ImGui::DestroyContext();

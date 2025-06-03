@@ -19,7 +19,7 @@ void CameraManipulator::SetCamera(Camera *_pCamera)
 	if (!m_pCamera)
 		return;
 
-	// A kezdeti gömbkoordináták beállítása.
+	// Setting the initial spherical coordinates
 	m_center = m_pCamera->GetAt();
 	glm::vec3 ToAim = m_center - m_pCamera->GetEye();
 
@@ -36,32 +36,32 @@ void CameraManipulator::Update(float _deltaTime)
 	if (!m_pCamera)
 		return;
 
-	// Frissítjük a kamerát a Model paraméterek alapján.
+	// Updating the camera based on the Model parameters
 
-	// Az új nézési irányt a gömbi koordináták alapján számoljuk ki.
+	// Calculating the new viewing direction based on spherical coordinates
 	glm::vec3 lookDirection(cosf(m_u) * sinf(m_v),
 													cosf(m_v),
 													sinf(m_u) * sinf(m_v));
-	// Az új kamera pozíciót a nézési irány és a távolság alapján számoljuk ki.
+	// Calculating the new camera position based on the viewing direction and distance
 	glm::vec3 eye = m_center - m_distance * lookDirection;
 
-	// Az új felfelé irány a világ felfelével legyen azonos.
+	// Setting the new up direction to match the world's up direction
 	glm::vec3 up = m_pCamera->GetWorldUp();
 
-	// Az új jobbra irányt a nézési irány és a felfelé irány keresztszorzatából számoljuk ki.
+	// Calculating the new right direction using the cross-product of viewing and up directions
 	glm::vec3 right = glm::normalize(glm::cross(lookDirection, up));
 
-	// Az új előre irányt a felfelé és jobbra irányok keresztszorzatából számoljuk ki.
+	// Calculating the new forward direction using the cross-product of up and right directions
 	glm::vec3 forward = glm::cross(up, right);
 
-	// Az új elmozdulásat a kamera mozgás irányának és sebességének a segítségével számoljuk ki.
+	// Calculating the new displacement based on camera movement direction and speed
 	glm::vec3 deltaPosition = (m_goForward * forward + m_goRight * right + m_goUp * up) * m_speed * _deltaTime;
 
-	// Az új kamera pozíciót és nézési cél pozíciót beállítjuk.
+	// Updating the new camera position and target position
 	eye += deltaPosition;
 	m_center += deltaPosition;
 
-	// Frissítjük a kamerát az új pozícióval és nézési iránnyal.
+	// Updating the camera with the new position and viewing direction
 	m_pCamera->SetView(eye, m_center, m_worldUp);
 }
 

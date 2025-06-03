@@ -8,11 +8,11 @@
 
 /*
 
- Az http://www.opengl-tutorial.org/ oldal alapján.
+ Based on http://www.opengl-tutorial.org/
 
 */
 
-// Segédosztályok
+// Helper structures
 
 struct VertexPosColor
 {
@@ -90,10 +90,10 @@ struct MeshObject
 
 struct OGLObject
 {
-    GLuint vaoID = 0;  // Vertex Array Object erőforrás azonosító
-    GLuint vboID = 0;  // Vertex Buffer Object erőforrás azonosító
-    GLuint iboID = 0;  // Index Buffer Object erőforrás azonosító
-    GLsizei count = 0; // mennyi indexet/vertexet kell rajzolnunk
+    GLuint vaoID = 0;  // Vertex Array Object resource identifier
+    GLuint vboID = 0;  // Vertex Buffer Object resource identifier
+    GLuint iboID = 0;  // Index Buffer Object resource identifier
+    GLsizei count = 0; // Number of indices/vertices to be drawn
 };
 
 struct VertexAttributeDescriptor
@@ -104,7 +104,7 @@ struct VertexAttributeDescriptor
     GLenum glType = GL_NONE;
 };
 
-// Segédfüggvények
+// Helper functions
 
 GLuint AttachShader(const GLuint programID, GLenum shaderType, const std::filesystem::path &_fileName);
 GLuint AttachShaderCode(const GLuint programID, GLenum shaderType, std::string_view shaderCode);
@@ -115,74 +115,73 @@ template <typename VertexT>
 {
     OGLObject meshGPU = {0};
 
-    // hozzunk létre egy új VBO erőforrás nevet
+    // Create a new VBO resource name
     glCreateBuffers(1, &meshGPU.vboID);
 
-    // töltsük fel adatokkal a VBO-t
-    glNamedBufferData(meshGPU.vboID,                             // a VBO-ba töltsünk adatokat
-                      mesh.vertexArray.size() * sizeof(VertexT), // ennyi bájt nagyságban
-                      mesh.vertexArray.data(),                   // erről a rendszermemóriabeli címről olvasva
-                      GL_STATIC_DRAW);                           // úgy, hogy a VBO-nkba nem tervezünk ezután írni és minden kirajzoláskor felhasnzáljuk a benne lévő adatokat
+    // Fill the VBO with data
+    glNamedBufferData(meshGPU.vboID,                             // Load data into the VBO
+                      mesh.vertexArray.size() * sizeof(VertexT), // With this byte size
+                      mesh.vertexArray.data(),                   // From this system memory address
+                      GL_STATIC_DRAW);                           // Assuming we do not plan to write further into the VBO, and its data is used in each rendering
 
-    // index puffer létrehozása
+    // Create the index buffer
     glCreateBuffers(1, &meshGPU.iboID);
     // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, meshGPU.iboID);
     glNamedBufferData(meshGPU.iboID, mesh.indexArray.size() * sizeof(GLuint), mesh.indexArray.data(), GL_STATIC_DRAW);
 
     meshGPU.count = static_cast<GLsizei>(mesh.indexArray.size());
 
-    // 1 db VAO foglalása
+    // Allocate one VAO
     glCreateVertexArrays(1, &meshGPU.vaoID);
-    // a frissen generált VAO beallítasa aktívnak
+    // Set it active
 
     glVertexArrayVertexBuffer(meshGPU.vaoID, 0, meshGPU.vboID, 0, sizeof(VertexT));
 
-    // attribútumok beállítása
+    // Set up attributes
     for (const auto &vertexAttrDesc : vertexAttrDescList)
     {
-        glEnableVertexArrayAttrib(meshGPU.vaoID, vertexAttrDesc.index);     // engedélyezzük az attribútumot
-        glVertexArrayAttribBinding(meshGPU.vaoID, vertexAttrDesc.index, 0); // melyik VBO-ból olvassa az adatokat
+        glEnableVertexArrayAttrib(meshGPU.vaoID, vertexAttrDesc.index);     // Enable the attribute
+        glVertexArrayAttribBinding(meshGPU.vaoID, vertexAttrDesc.index, 0); // Specify which VBO the attribute should read from
 
         switch (vertexAttrDesc.glType)
         {
 
-        case GL_FLOAT: // Az attribútum float32-kat tartalmaz
+        case GL_FLOAT: // The attribute contains float32 values
             glVertexArrayAttribFormat(
-                meshGPU.vaoID,                     // a VAO-hoz tartozó attribútumokat állítjuk be
-                vertexAttrDesc.index,              // a VB-ben található adatok közül a soron következő "indexű" attribútumait állítjuk be
-                vertexAttrDesc.numberOfComponents, // komponens szám
-                vertexAttrDesc.glType,             // adatok típusa
-                GL_FALSE,                          // normalizalt legyen-e
-                vertexAttrDesc.strideInBytes       // az attribútum hol kezdődik a sizeof(VertexT)-nyi területen belül
+                meshGPU.vaoID,                     // Setting attributes for the VAO
+                vertexAttrDesc.index,              // Setting attributes for the next index in the VB
+                vertexAttrDesc.numberOfComponents, // Number of components
+                vertexAttrDesc.glType,             // Data type
+                GL_FALSE,                          // Whether it should be normalized
+                vertexAttrDesc.strideInBytes       // Where the attribute starts within sizeof(VertexT)
             );
             break;
-        case GL_UNSIGNED_INT: // Az attribútum uint-eket tartalmaz
+        case GL_UNSIGNED_INT: // The attribute contains uint values
             glVertexArrayAttribIFormat(
-                meshGPU.vaoID,                     // a VAO-hoz tartozó attribútumokat állítjuk be
-                vertexAttrDesc.index,              // a VB-ben található adatok közül a soron következő "indexű" attribútumait állítjuk be
-                vertexAttrDesc.numberOfComponents, // komponens szám
-                vertexAttrDesc.glType,             // adatok típusa
-                vertexAttrDesc.strideInBytes       // az attribútum hol kezdődik a sizeof(VertexT)-nyi területen belül
+                meshGPU.vaoID,                     // Setting attributes for the VAO
+                vertexAttrDesc.index,              // Setting attributes for the next index in the VB
+                vertexAttrDesc.numberOfComponents, // Number of components
+                vertexAttrDesc.glType,             // Data type
+                vertexAttrDesc.strideInBytes       // Where the attribute starts within sizeof(VertexT)
             );
             break;
-        case GL_DOUBLE: // Az attribútum double-öket tartalmaz
+        case GL_DOUBLE: // The attribute contains double values
             glVertexArrayAttribLFormat(
-                meshGPU.vaoID,                     // a VAO-hoz tartozó attribútumokat állítjuk be
-                vertexAttrDesc.index,              // a VB-ben található adatok közül a soron következő "indexű" attribútumait állítjuk be
-                vertexAttrDesc.numberOfComponents, // komponens szám
-                vertexAttrDesc.glType,             // adatok típusa
-                vertexAttrDesc.strideInBytes       // az attribútum hol kezdődik a sizeof(VertexT)-nyi területen belül
+                meshGPU.vaoID,                     // Setting attributes for the VAO
+                vertexAttrDesc.index,              // Setting attributes for the next index in the VB
+                vertexAttrDesc.numberOfComponents, // Number of components
+                vertexAttrDesc.glType,             // Data type
+                vertexAttrDesc.strideInBytes       // Where the attribute starts within sizeof(VertexT)
             );
             break;
-        default: // Minden egyébnél feltételezzük, hogy az attribútum a [0,1] vagy [-1,1] intervallum egészekkel való tömörítése
-                 // Ezért itt bekapcsoljuk a normalizálást.
+        default: // For all other cases, assume normalization is needed for compressed integer values
             glVertexArrayAttribFormat(
-                meshGPU.vaoID,                     // a VAO-hoz tartozó attribútumokat állítjuk be
-                vertexAttrDesc.index,              // a VB-ben található adatok közül a soron következő "indexű" attribútumait állítjuk be
-                vertexAttrDesc.numberOfComponents, // komponens szám
-                vertexAttrDesc.glType,             // adatok típusa
-                GL_TRUE,                           // normalizalt legyen-e
-                vertexAttrDesc.strideInBytes       // az attribútum hol kezdődik a sizeof(VertexT)-nyi területen belül
+                meshGPU.vaoID,                     // Setting attributes for the VAO
+                vertexAttrDesc.index,              // Setting attributes for the next index in the VB
+                vertexAttrDesc.numberOfComponents, // Number of components
+                vertexAttrDesc.glType,             // Data type
+                GL_TRUE,                           // Whether it should be normalized
+                vertexAttrDesc.strideInBytes       // Where the attribute starts within sizeof(VertexT)
             );
             break;
         }
@@ -197,13 +196,13 @@ void CleanOGLObject(OGLObject &ObjectGPU);
 [[nodiscard]] ImageRGBA ImageFromFile(const std::filesystem::path &fileName, bool needsFlip = true);
 GLsizei NumberOfMIPLevels(const ImageRGBA &);
 
-// uniform location lekérdezése a paraméterben megadott programon
+// Retrieve uniform location in the specified program
 inline GLint ul(GLuint programID, const GLchar *uniformName) noexcept
 {
     // https://registry.khronos.org/OpenGL-Refpages/gl4/html/glGetUniformLocation.xhtml
     return glGetUniformLocation(programID, uniformName);
 }
-// uniform location lekérdezése az aktív programon
+// Retrieve uniform location in the active program
 inline GLint ul(const GLchar *uniformName) noexcept
 {
     GLint prog;

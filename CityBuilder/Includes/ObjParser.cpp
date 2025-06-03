@@ -298,7 +298,7 @@ ObjParser::Mesh ObjParser::parse(const std::filesystem::path &fileName)
 						cov_zz += centeredP.z * centeredP.z;
 					}
 
-					// viktor-vad: Very strange, but the pca.hpp and pca.inc disappeared from glm/gtx.
+					// Very strange, but the pca.hpp and pca.inc disappeared from glm/gtx.
 					// Did not find any explanation for this.
 					// Instead of some header file copy-hacking, I implemented a 3x3 verion of eigen decomposition.
 					// It was not intended, but most likely it is faster than the original glm pca, since that is a general method with Housholder and QR.

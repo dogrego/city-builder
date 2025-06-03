@@ -9,16 +9,16 @@
 
 /*
 
- Az http://www.opengl-tutorial.org/ oldal alapján.
+ Based on http://www.opengl-tutorial.org/
 
 */
 
 static void loadShaderCode(std::string &shaderCode, const std::filesystem::path &_fileName)
 {
-	// shaderkód betöltése _fileName fájlból
+	// Loading shader code from _fileName
 	shaderCode = "";
 
-	// _fileName megnyitása
+	// Opening _fileName
 	std::ifstream shaderStream(_fileName);
 	if (!shaderStream.is_open())
 	{
@@ -28,7 +28,7 @@ static void loadShaderCode(std::string &shaderCode, const std::filesystem::path 
 		return;
 	}
 
-	// file tartalmának betöltése a shaderCode string-be
+	// Loading the file content into the shaderCode string
 	std::string line = "";
 	while (std::getline(shaderStream, line))
 	{
@@ -40,7 +40,7 @@ static void loadShaderCode(std::string &shaderCode, const std::filesystem::path 
 
 GLuint AttachShader(const GLuint programID, GLenum shaderType, const std::filesystem::path &_fileName)
 {
-	// shaderkód betoltese _fileName fájlból
+	// Loading shader code from _fileName
 	std::string shaderCode;
 	loadShaderCode(shaderCode, _fileName);
 
@@ -57,29 +57,29 @@ GLuint AttachShaderCode(const GLuint programID, GLenum shaderType, std::string_v
 		return 0;
 	}
 
-	// shader létrehozása
+	// Creating the shader
 	GLuint shaderID = glCreateShader(shaderType);
 
-	// kód hozzárendelése a shader-hez
+	// Assigning code to the shader
 	const char *sourcePointer = shaderCode.data();
 	GLint sourceLength = static_cast<GLint>(shaderCode.length());
 
 	glShaderSource(shaderID, 1, &sourcePointer, &sourceLength);
 
-	// shader lefordítása
+	// Compiling the shader
 	glCompileShader(shaderID);
 
-	// ellenőrizzük, hogy minden rendben van-e
+	// Checking if everything is okay
 	GLint result = GL_FALSE;
 	int infoLogLength;
 
-	// fordítas státuszának lekérdezése
+	// Querying the compilation status
 	glGetShaderiv(shaderID, GL_COMPILE_STATUS, &result);
 	glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &infoLogLength);
 
 	if (GL_FALSE == result || infoLogLength != 0)
 	{
-		// hibaüzenet elkérése es kiírasa
+		// Retrieving and printing the error message
 		std::string ErrorMessage(infoLogLength, '\0');
 		glGetShaderInfoLog(shaderID, infoLogLength, NULL, ErrorMessage.data());
 
@@ -88,7 +88,7 @@ GLuint AttachShaderCode(const GLuint programID, GLenum shaderType, std::string_v
 									 "[glCompileShader]: %s", ErrorMessage.data());
 	}
 
-	// shader hozzárendelése a programhoz
+	// Attaching the shader to the program
 	glAttachShader(programID, shaderID);
 
 	return shaderID;
@@ -96,10 +96,10 @@ GLuint AttachShaderCode(const GLuint programID, GLenum shaderType, std::string_v
 
 void LinkProgram(const GLuint programID, bool OwnShaders)
 {
-	// illesszük össze a shadereket (kimenő-bemenő változók összerendelése stb.)
+	// Linking the shaders (matching input-output variables etc)
 	glLinkProgram(programID);
 
-	// linkelés ellenőrzése
+	// Checking linking status
 	GLint infoLogLength = 0, result = 0;
 
 	glGetProgramiv(programID, GL_LINK_STATUS, &result);
@@ -113,21 +113,21 @@ void LinkProgram(const GLuint programID, bool OwnShaders)
 									 "[glLinkProgram]: %s", ErrorMessage.data());
 	}
 
-	// Ebben az esetben a program objektumhoz tartozik a shader objektum.
-	// Vagyis a shader objektumokat ki tudjuk "törölni".
-	// Szabvány szerint (https://registry.khronos.org/OpenGL-Refpages/gl4/html/glDeleteShader.xhtml)
-	// a shader objektumok csak akkor törlődnek, ha nincsennek hozzárendelve egyetlen program objektumhoz sem.
-	// Vagyis mikor a program objektumot töröljük, akkor törlődnek a shader objektumok is.
+	// In this case, the program object owns the shader object
+	// This means that the shader objects can be "deleted"
+	// According to the standard (https://registry.khronos.org/OpenGL-Refpages/gl4/html/glDeleteShader.xhtml)
+	// Shader objects are only deleted if they are not attached to any program objects
+	// When the program object is deleted, the shader objects are deleted as well
 	if (OwnShaders)
 	{
-		// kerjük le a program objektumhoz tartozó shader objektumokat, ...
+		// Retrieve the shaders attached to the program object
 		GLint attachedShaders = 0;
 		glGetProgramiv(programID, GL_ATTACHED_SHADERS, &attachedShaders);
 		std::vector<GLuint> shaders(attachedShaders);
 
 		glGetAttachedShaders(programID, attachedShaders, nullptr, shaders.data());
 
-		// ...  és "töröljük" őket
+		// Delete them
 		for (GLuint shader : shaders)
 		{
 			glDeleteShader(shader);
@@ -173,7 +173,7 @@ GLsizei NumberOfMIPLevels(const ImageRGBA &image)
 {
 	ImageRGBA img;
 
-	// Kép betöltése
+	// Loading the image
 	std::unique_ptr<SDL_Surface, decltype(&SDL_FreeSurface)> loaded_img(IMG_Load(fileName.string().c_str()), SDL_FreeSurface);
 	if (!loaded_img)
 	{
@@ -183,14 +183,14 @@ GLsizei NumberOfMIPLevels(const ImageRGBA &image)
 		return img;
 	}
 
-	// Uint32-ben tárolja az SDL a színeket, ezért számít a bájtsorrend
+	// SDL stores colors in Uint32, so byte order matters
 #if SDL_BYTEORDER == SDL_LIL_ENDIAN
 	Uint32 format = SDL_PIXELFORMAT_ABGR8888;
 #else
 	Uint32 format = SDL_PIXELFORMAT_RGBA8888;
 #endif
 
-	// Átalakítás 32bit RGBA formátumra, ha nem abban volt
+	// Convert to 32-bit RGBA format if it was in a different format
 	std::unique_ptr<SDL_Surface, decltype(&SDL_FreeSurface)> formattedSurf(SDL_ConvertSurfaceFormat(loaded_img.get(), format, 0), SDL_FreeSurface);
 
 	if (!formattedSurf)
@@ -201,10 +201,10 @@ GLsizei NumberOfMIPLevels(const ImageRGBA &image)
 		return img;
 	}
 
-	// Rakjuk át az SDL Surface-t az ImageRGBA-ba
+	// Transfer SDL Surface to ImageRGBA
 	img.Assign(reinterpret_cast<const std::uint32_t *>(formattedSurf->pixels), formattedSurf->w, formattedSurf->h);
 
-	// Áttérés SDL koordinátarendszerről ( (0,0) balfent ) OpenGL textúra-koordinátarendszerre ( (0,0) ballent )
+	// Convert from SDL coordinate system ((0,0) top-left) to OpenGL texture coordinate system ((0,0) bottom-left)
 
 	if (needsFlip)
 		invert_image_RGBA(img);

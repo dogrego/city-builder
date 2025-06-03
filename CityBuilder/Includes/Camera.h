@@ -31,25 +31,25 @@ public:
 	void SetProj(float _angle, float _aspect, float _zn, float _zf);
 
 private:
-	// Kamerapozíció.
+	// Camera position
 	glm::vec3 m_eye;
 
-	// A felfele irány vektora.
+	// The up direction vector.
 	glm::vec3 m_worldUp;
 
-	// A kamera nézési cél pozíciója.
+	// The target position the camera is looking at.
 	glm::vec3 m_at;
 
-	// A kamera nézeti mátrixa.
+	// The camera view matrix.
 	glm::mat4 m_viewMatrix;
 
-	// Projekciós paraméterek.
+	// Projection parameters.
 	float m_zNear = 0.01f;
 	float m_zFar = 1000.0f;
 
 	float m_angle = glm::radians(27.0f);
 	float m_aspect = 1.0f;
 
-	// Projekciós mátrix.
+	// Projection matrix.
 	glm::mat4 m_projMatrix;
 };
